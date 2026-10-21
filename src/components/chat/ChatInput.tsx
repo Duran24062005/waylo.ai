@@ -1,6 +1,9 @@
-import type { FormEvent } from "react";
+"use client";
+
+import { useEffect, useRef, type FormEvent, type KeyboardEvent } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { SendIcon } from "@hugeicons/core-free-icons";
+import { ArrowUp02Icon } from "@hugeicons/core-free-icons";
+import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
   value: string;
@@ -11,35 +14,64 @@ interface ChatInputProps {
   onBlur: () => void;
 }
 
+const MAX_HEIGHT = 176;
+
 export function ChatInput({ value, pending, onChange, onSubmit, onFocus, onBlur }: ChatInputProps) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const canSend = value.trim().length > 0 && !pending;
+
+  // Grows with the text up to a limit, then scrolls.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, MAX_HEIGHT)}px`;
+  }, [value]);
+
+  function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      event.currentTarget.form?.requestSubmit();
+    }
+  }
+
   return (
     <form onSubmit={onSubmit} method="post" className="group relative">
       <div
         aria-hidden
-        className="pointer-events-none absolute -inset-1 rounded-xl bg-linear-to-r from-accent via-success to-accent opacity-0 blur-md transition-opacity duration-[var(--duration-base)] ease-standard group-focus-within:opacity-40"
+        className="pointer-events-none absolute -inset-2 rounded-xl bg-linear-to-r from-accent via-success to-accent opacity-0 blur-xl transition-opacity duration-[var(--duration-slow)] ease-standard group-focus-within:opacity-30"
       />
-      <div className="relative flex items-center gap-2 rounded-xl border-2 border-border-strong bg-surface-raised p-2 shadow-soft transition-colors duration-[var(--duration-fast)] ease-standard group-focus-within:border-accent has-[input:focus-visible]:outline-3 has-[input:focus-visible]:outline-offset-2 has-[input:focus-visible]:outline-focus-ring">
+      <div className="relative flex items-end gap-3 rounded-xl bg-surface-raised p-3 shadow-raised transition-transform duration-[var(--duration-base)] ease-standard group-focus-within:-translate-y-0.5">
         <label className="sr-only" htmlFor="mensaje">
           Escribe cómo te sientes
         </label>
-        <input
+        <textarea
+          ref={ref}
           id="mensaje"
+          rows={1}
           value={value}
           onChange={(event) => onChange(event.target.value)}
+          onKeyDown={onKeyDown}
           onFocus={onFocus}
           onBlur={onBlur}
-          placeholder="Cuéntame qué sientes"
+          placeholder="Cuéntame qué sientes…"
           autoComplete="off"
           enterKeyHint="send"
-          className="min-h-12 min-w-0 flex-1 bg-transparent px-2 text-body text-text outline-none placeholder:text-text-muted"
+          className="max-h-44 min-h-12 min-w-0 flex-1 resize-none rounded-lg bg-surface px-4 py-3 text-body text-text shadow-inset placeholder:text-text-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
         />
         <button
           type="submit"
-          disabled={pending}
-          className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-lg bg-accent px-4 text-body font-bold text-accent-foreground transition-[opacity,transform] duration-[var(--duration-fast)] ease-standard enabled:hover:opacity-90 enabled:active:scale-95 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={!canSend}
+          aria-label="Enviar mensaje"
+          className={cn(
+            "inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-soft",
+            "transition-[transform,box-shadow,opacity] duration-[var(--duration-base)] ease-standard",
+            "enabled:hover:-translate-y-0.5 enabled:hover:shadow-raised enabled:active:translate-y-0 enabled:active:shadow-pressed",
+            "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+            "disabled:cursor-not-allowed disabled:opacity-40",
+          )}
         >
-          <HugeiconsIcon icon={SendIcon} size={20} strokeWidth={2} aria-hidden />
-          Enviar
+          <HugeiconsIcon icon={ArrowUp02Icon} size={22} strokeWidth={2.5} aria-hidden />
         </button>
       </div>
     </form>

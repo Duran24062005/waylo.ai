@@ -1,16 +1,16 @@
 // Mirrors the motion tokens in src/app/globals.css. Change both together.
 
 export const durationMs = {
-  fast: 150,
-  base: 250,
-  slow: 400,
+  fast: 220,
+  base: 420,
+  slow: 700,
 } as const;
 
 /** Seconds, for GSAP and motion. */
 export const duration = {
-  fast: 0.15,
-  base: 0.25,
-  slow: 0.4,
+  fast: 0.22,
+  base: 0.42,
+  slow: 0.7,
 } as const;
 
 /** Cubic-bezier control points, for motion's `ease` option. */

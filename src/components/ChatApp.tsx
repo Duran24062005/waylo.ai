@@ -2,7 +2,14 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { MotionConfig } from "motion/react";
-import { ChatHeader, ChatInput, EpsField, MessageList, QuickReplies } from "@/components/chat";
+import {
+  ChatHeader,
+  ChatInput,
+  ChatSidebar,
+  EmptyState,
+  MessageList,
+  QuickReplies,
+} from "@/components/chat";
 import type { MascotState } from "@/components/mascot";
 import type { ChatMessage, TriageResponse } from "@/lib/types";
 
@@ -15,15 +22,17 @@ const WELCOME: ChatMessage = {
     "Hola. Te ayudo a saber a qué nivel de atención acudir. No doy diagnósticos ni recetas. Si te falta el aire, duele el pecho o te sientes muy mal, ve ya a Urgencias.",
 };
 
+const FAILURE_TEXT = "No pude completar la orientación. Si te sientes mal, busca atención médica.";
 const SPEAKING_MS = 2400;
 
-export function ChatApp() {
+export function ChatApp({ nombre }: { nombre?: string | null }) {
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
   const [draft, setDraft] = useState("");
   const [eps, setEps] = useState("");
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<TriageResponse | null>(null);
   const [alertIds, setAlertIds] = useState<string[]>([]);
+  const [errorIds, setErrorIds] = useState<string[]>([]);
   const [focused, setFocused] = useState(false);
   const [speaking, setSpeaking] = useState(false);
 
@@ -33,13 +42,7 @@ export function ChatApp() {
     return () => window.clearTimeout(timer);
   }, [speaking]);
 
-  async function send(text: string) {
-    const content = text.trim();
-    if (!content || pending) return;
-
-    const nextMessages = [...messages, { id: crypto.randomUUID(), role: "user" as const, content }];
-    setMessages(nextMessages);
-    setDraft("");
+  async function request(history: ChatMessage[]) {
     setPending(true);
     setResult(null);
 
@@ -49,11 +52,12 @@ export function ChatApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           eps,
-          messages: nextMessages
-            .filter((message) => message.id !== "welcome")
+          messages: history
+            .filter((message) => message.id !== "welcome" && !errorIds.includes(message.id))
             .map(({ role, content: textContent }) => ({ role, content: textContent })),
         }),
       });
+      if (!response.ok) throw new Error("triage failed");
       const data = (await response.json()) as TriageResponse;
       const replyId = crypto.randomUUID();
       setResult(data);
@@ -61,57 +65,103 @@ export function ChatApp() {
       if (data.kind === "red_flag") setAlertIds((current) => [...current, replyId]);
       setSpeaking(true);
     } catch {
-      setMessages((current) => [
-        ...current,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: "No pude completar la orientación. Si te sientes mal, busca atención médica.",
-        },
-      ]);
-      setSpeaking(true);
+      const failureId = crypto.randomUUID();
+      setMessages((current) => [...current, { id: failureId, role: "assistant", content: FAILURE_TEXT }]);
+      setErrorIds((current) => [...current, failureId]);
     } finally {
       setPending(false);
     }
   }
 
-  function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    void send(draft);
+  function send(text: string) {
+    const content = text.trim();
+    if (!content || pending) return;
+
+    const nextMessages = [...messages, { id: crypto.randomUUID(), role: "user" as const, content }];
+    setMessages(nextMessages);
+    setDraft("");
+    void request(nextMessages);
   }
 
-  const replies = result?.quickReplies ?? (messages.length === 1 ? STARTERS : []);
+  function retry() {
+    const lastErrorId = errorIds[errorIds.length - 1];
+    if (!lastErrorId || pending) return;
+    const history = messages.filter((message) => message.id !== lastErrorId);
+    setMessages(history);
+    setErrorIds((current) => current.filter((id) => id !== lastErrorId));
+    void request(history);
+  }
 
-  // The alert state is never used in the header: it only sits next to the fixed red-flag text.
+  function reset() {
+    setMessages([WELCOME]);
+    setDraft("");
+    setResult(null);
+    setAlertIds([]);
+    setErrorIds([]);
+    setSpeaking(false);
+  }
+
+  function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    send(draft);
+  }
+
+  const lastMessage = messages[messages.length - 1];
+  const failed = errorIds.includes(lastMessage.id);
+  const started = messages.length > 1;
+  const replies = result?.quickReplies ?? [];
+
+  // The alert state is not used here: it only sits next to the fixed red-flag text, in MessageList.
   let mascotState: MascotState = "idle";
   if (pending) mascotState = "thinking";
+  else if (failed) mascotState = "error";
   else if (speaking) mascotState = "speaking";
   else if (focused) mascotState = "listening";
   else if (result?.kind === "orientation" && result.card && result.card.nivel !== "urgencias") mascotState = "success";
 
   return (
     <MotionConfig reducedMotion="user">
-      <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col overflow-x-clip px-4 pt-4">
-        <ChatHeader mascotState={mascotState} />
-        <EpsField value={eps} onChange={setEps} />
-        <MessageList
-          messages={messages}
-          pending={pending}
-          card={result?.card}
-          alertMessageIds={alertIds}
-        />
-        <div className="sticky bottom-0 z-10 -mx-4 mt-4 space-y-3 bg-surface px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
-          <QuickReplies replies={replies} disabled={pending} onSelect={(reply) => void send(reply)} />
-          <ChatInput
-            value={draft}
-            pending={pending}
-            onChange={setDraft}
-            onSubmit={onSubmit}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-          />
+      <div className="flex h-dvh bg-surface text-text">
+        <ChatSidebar mascotState={mascotState} eps={eps} onEpsChange={setEps} onReset={reset} nombre={nombre} />
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <ChatHeader mascotState={mascotState} eps={eps} onEpsChange={setEps} />
+
+          <div className="flex-1 overflow-y-auto">
+            <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 sm:px-8">
+              {started ? (
+                <MessageList
+                  messages={messages.filter((message) => message.id !== "welcome")}
+                  pending={pending}
+                  card={result?.card}
+                  alertMessageIds={alertIds}
+                  errorMessageIds={errorIds}
+                  onRetry={retry}
+                />
+              ) : (
+                <EmptyState nombre={nombre} suggestions={STARTERS} disabled={pending} onSelect={send} />
+              )}
+            </div>
+          </div>
+
+          <div className="px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 sm:px-8">
+            <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
+              <QuickReplies replies={replies} disabled={pending} onSelect={send} />
+              <ChatInput
+                value={draft}
+                pending={pending}
+                onChange={setDraft}
+                onSubmit={onSubmit}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+              />
+              <p className="text-center text-caption text-text-muted">
+                Waylo orienta, no diagnostica ni receta. Si te sientes muy mal, ve a Urgencias.
+              </p>
+            </div>
+          </div>
         </div>
-      </main>
+      </div>
     </MotionConfig>
   );
 }

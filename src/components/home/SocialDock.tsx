@@ -51,7 +51,7 @@ export function SocialDock() {
           initial={false}
           animate={{ opacity: open ? 1 : 0, y: open ? 0 : 6 }}
           transition={{ duration: duration.base, ease }}
-          className="pointer-events-none absolute bottom-full mb-3 h-20 w-64 rounded-md border border-border bg-surface-raised shadow-raised"
+          className="pointer-events-none absolute bottom-full mb-3 h-20 w-64 rounded-md bg-surface-raised shadow-raised"
         >
           <AnimatePresence>
             {active && ActiveIcon ? (
@@ -75,7 +75,7 @@ export function SocialDock() {
           </AnimatePresence>
         </motion.div>
 
-        <ul className="flex items-center gap-2 rounded-full border border-border bg-surface-raised p-2 shadow-soft">
+        <ul className="flex items-center gap-2 rounded-full bg-surface-raised p-2 shadow-soft">
           {socialLinks.map((link) => {
             const icon = icons[link.icon];
             return (

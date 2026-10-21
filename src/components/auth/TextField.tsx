@@ -19,7 +19,7 @@ export function TextField({ label, error, trailing, id, ref, ...inputProps }: Te
 
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={inputId} className="text-body font-bold text-text">
+      <label htmlFor={inputId} className="font-heading text-base font-medium text-text">
         {label}
       </label>
       <div className="relative">

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { ChatApp } from "@/components/ChatApp";
+import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Chat | Navegador del paciente",
 };
 
-export default function ChatPage() {
-  return <ChatApp />;
+export default async function ChatPage() {
+  const session = await getSession();
+  return <ChatApp nombre={session?.nombre} />;
 }
