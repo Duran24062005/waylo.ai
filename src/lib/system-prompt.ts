@@ -19,4 +19,4 @@ Si aún necesitas preguntar, responde SOLO con JSON válido:
 No incluyas texto fuera del JSON.`;
 
 export const LEGAL_DISCLAIMER =
-  "Esta orientación no es un diagnóstico ni reemplaza la valoración de un profesional de la salud. Si empeoras o tienes dudas, busca atención.";
+  "Esta orientación no es un diagnóstico ni reemplaza la valoración de un profesional de la salud. Si empeoras o tienes dudas, busca atención médica.";

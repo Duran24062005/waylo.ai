@@ -1,23 +1,43 @@
-import { MapPin, Phone } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { MapPinIcon, PhoneIcon } from "@hugeicons/core-free-icons";
+import { cn } from "@/lib/utils";
 import type { OrientationCard as Card } from "@/lib/types";
 
 const BADGE: Record<Card["nivel"], string> = {
-  urgencias: "bg-red-700 text-white",
-  prioritaria: "bg-amber-400 text-amber-950",
-  general: "bg-emerald-700 text-white",
+  urgencias: "bg-danger text-danger-foreground",
+  prioritaria: "bg-warning text-warning-foreground",
+  general: "bg-success text-success-foreground",
 };
 
 export function OrientationCard({ card }: { card: Card }) {
+  const urgent = card.nivel === "urgencias";
+
   return (
-    <section className="rounded-2xl border-2 border-slate-900 bg-white p-4 shadow-sm" aria-label="Orientación">
-      <p className="text-sm font-bold uppercase tracking-wide text-slate-600">Nivel de atención recomendado</p>
-      <p className={`mt-2 inline-flex rounded-full px-4 py-2 text-lg font-bold ${BADGE[card.nivel]}`}>{card.nivelLabel}</p>
+    <section
+      className={cn(
+        "rounded-lg border-2 bg-surface-raised p-4 shadow-raised",
+        urgent ? "border-danger" : "border-border-strong",
+      )}
+      aria-label="Orientación"
+    >
+      <p className="text-caption font-bold uppercase tracking-wide text-text-muted">
+        Nivel de atención recomendado
+      </p>
+      <p
+        className={cn(
+          "mt-2 inline-flex rounded-full px-4 py-2 text-body-lg font-bold",
+          BADGE[card.nivel],
+          urgent && "ring-2 ring-danger ring-offset-2 ring-offset-surface-raised",
+        )}
+      >
+        {card.nivelLabel}
+      </p>
 
-      <h2 className="mt-4 text-base font-bold">Por qué</h2>
-      <p className="mt-1 text-lg leading-snug">{card.justificacion}</p>
+      <h2 className="mt-4 text-body font-bold text-text">Por qué</h2>
+      <p className="mt-1 text-body text-text">{card.justificacion}</p>
 
-      <h2 className="mt-4 text-base font-bold">Qué debes llevar</h2>
-      <ul className="mt-1 list-disc space-y-1 pl-5 text-lg">
+      <h2 className="mt-4 text-body font-bold text-text">Qué debes llevar</h2>
+      <ul className="mt-1 list-disc space-y-1 pl-5 text-body text-text marker:text-text-muted">
         {card.queLlevar.map((item) => (
           <li key={item}>{item}</li>
         ))}
@@ -25,18 +45,22 @@ export function OrientationCard({ card }: { card: Card }) {
 
       {card.sedes.length > 0 && (
         <>
-          <h2 className="mt-4 text-base font-bold">Sedes de ejemplo</h2>
+          <h2 className="mt-4 text-body font-bold text-text">Lugares de ejemplo</h2>
           <ul className="mt-2 space-y-3">
             {card.sedes.map((site) => (
-              <li key={site.id} className="rounded-xl bg-slate-100 p-3">
-                <p className="text-lg font-bold">{site.nombre}</p>
-                <p className="mt-1 flex items-start gap-2 text-base">
-                  <MapPin className="mt-1 shrink-0" size={18} aria-hidden />
-                  {site.direccion}, {site.ciudad}
+              <li key={site.id} className="rounded-md border border-border bg-surface p-3">
+                <p className="text-body font-bold text-text">{site.nombre}</p>
+                <p className="mt-1 flex items-start gap-2 text-caption text-text">
+                  <HugeiconsIcon icon={MapPinIcon} className="mt-1 shrink-0" size={18} strokeWidth={2} aria-hidden />
+                  <span className="min-w-0 break-words">
+                    {site.direccion}, {site.ciudad}
+                  </span>
                 </p>
-                <p className="mt-1 flex items-center gap-2 text-base">
-                  <Phone size={18} aria-hidden />
-                  {site.telefono} · {site.horario}
+                <p className="mt-1 flex items-start gap-2 text-caption text-text">
+                  <HugeiconsIcon icon={PhoneIcon} className="mt-1 shrink-0" size={18} strokeWidth={2} aria-hidden />
+                  <span className="min-w-0 break-words">
+                    {site.telefono} · {site.horario}
+                  </span>
                 </p>
               </li>
             ))}
@@ -44,7 +68,7 @@ export function OrientationCard({ card }: { card: Card }) {
         </>
       )}
 
-      <p className="mt-4 text-sm leading-snug text-slate-700">{card.aviso}</p>
+      <p className="mt-4 text-caption text-text-muted">{card.aviso}</p>
     </section>
   );
 }
