@@ -1,0 +1,90 @@
+[
+  {
+    "id": "urg-01",
+    "nombre": "Hospital San Rafael - Urgencias",
+    "tipo_atencion": ["Urgencias 24h"],
+    "direccion": "Calle 10 # 8-40, centro",
+    "ciudad": "Bogotá",
+    "eps_convenio": ["Nueva EPS", "Sanitas", "Sura", "Compensar", "Famisanar"],
+    "requisitos": ["Documento de identidad", "Carné de afiliación si lo tienes"],
+    "horario": "24 horas",
+    "telefono": "601 300 1100"
+  },
+  {
+    "id": "urg-02",
+    "nombre": "Clínica del Norte - Urgencias",
+    "tipo_atencion": ["Urgencias 24h", "Prioritaria"],
+    "direccion": "Avenida 68 # 90-15",
+    "ciudad": "Bogotá",
+    "eps_convenio": ["Nueva EPS", "Sura", "Compensar", "Salud Total"],
+    "requisitos": ["Documento de identidad"],
+    "horario": "24 horas",
+    "telefono": "601 300 2200"
+  },
+  {
+    "id": "prio-01",
+    "nombre": "Centro de Atención Prioritaria Kennedy",
+    "tipo_atencion": ["Prioritaria"],
+    "direccion": "Carrera 78K # 37A-20",
+    "ciudad": "Bogotá",
+    "eps_convenio": ["Nueva EPS", "Capital Salud", "Famisanar", "Sanitas"],
+    "requisitos": ["Documento de identidad", "Carné o app de la EPS"],
+    "horario": "7:00 a 19:00",
+    "telefono": "601 300 3300"
+  },
+  {
+    "id": "prio-02",
+    "nombre": "IPS Prioritaria Suba",
+    "tipo_atencion": ["Prioritaria", "Externa"],
+    "direccion": "Calle 145 # 91-19",
+    "ciudad": "Bogotá",
+    "eps_convenio": ["Sanitas", "Sura", "Compensar", "Nueva EPS"],
+    "requisitos": ["Documento de identidad", "Carné de afiliación"],
+    "horario": "6:00 a 20:00",
+    "telefono": "601 300 4400"
+  },
+  {
+    "id": "gen-01",
+    "nombre": "IPS Medicina General Chapinero",
+    "tipo_atencion": ["Externa"],
+    "direccion": "Carrera 13 # 54-80",
+    "ciudad": "Bogotá",
+    "eps_convenio": ["Sanitas", "Sura", "Compensar", "Famisanar", "Salud Total"],
+    "requisitos": ["Documento de identidad", "Orden o autorización si tu EPS la pide", "Exámenes previos si los tienes"],
+    "horario": "7:00 a 17:00, lunes a viernes",
+    "telefono": "601 300 5500"
+  },
+  {
+    "id": "gen-02",
+    "nombre": "Centro Ambulatorio Teusaquillo",
+    "tipo_atencion": ["Externa"],
+    "direccion": "Calle 34 # 20-15",
+    "ciudad": "Bogotá",
+    "eps_convenio": ["Nueva EPS", "Capital Salud", "Compensar", "Sura"],
+    "requisitos": ["Documento de identidad", "Carné de afiliación", "Exámenes previos si los tienes"],
+    "horario": "7:00 a 16:00, lunes a sábado",
+    "telefono": "601 300 6600"
+  },
+  {
+    "id": "urg-03",
+    "nombre": "Hospital General de Medellín - Urgencias",
+    "tipo_atencion": ["Urgencias 24h"],
+    "direccion": "Calle 64 # 51D-154",
+    "ciudad": "Medellín",
+    "eps_convenio": ["Sura", "Nueva EPS", "Savia Salud", "Coomeva"],
+    "requisitos": ["Documento de identidad"],
+    "horario": "24 horas",
+    "telefono": "604 300 7700"
+  },
+  {
+    "id": "prio-03",
+    "nombre": "Unidad Prioritaria El Poblado",
+    "tipo_atencion": ["Prioritaria", "Externa"],
+    "direccion": "Carrera 43A # 1-50",
+    "ciudad": "Medellín",
+    "eps_convenio": ["Sura", "Sanitas", "Nueva EPS"],
+    "requisitos": ["Documento de identidad", "Carné de afiliación"],
+    "horario": "7:00 a 19:00",
+    "telefono": "604 300 8800"
+  }
+]
