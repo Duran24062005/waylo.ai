@@ -26,7 +26,7 @@ export function UserMenu({ nombre, className }: { nombre?: string | null; classN
         <p className="font-heading text-body font-medium text-text">
           Hola, <span className="font-semibold">{nombre.split(" ")[0]}</span>
         </p>
-        <button type="button" onClick={logout} disabled={leaving} className={cn(buttonSoft, "min-h-11 px-4 text-base")}>
+        <button type="button" onClick={logout} disabled={leaving} className={cn(buttonSoft, "h-12 px-5 text-base")}>
           Cerrar sesión
         </button>
       </div>
@@ -35,10 +35,10 @@ export function UserMenu({ nombre, className }: { nombre?: string | null; classN
 
   return (
     <div className={cn("flex flex-wrap items-center gap-3", className)}>
-      <Link href="/login" className={cn(buttonSoft, "min-h-11 px-4 text-base")}>
+      <Link href="/login" className={cn(buttonSoft, "h-12 px-5 text-base")}>
         Iniciar sesión
       </Link>
-      <Link href="/registro" className={cn(buttonPrimary, "min-h-11 px-4 text-base")}>
+      <Link href="/registro" className={cn(buttonPrimary, "h-12 px-5 text-base")}>
         Crear cuenta
       </Link>
     </div>

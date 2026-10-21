@@ -21,7 +21,7 @@ export function StrengthMeter({ password }: { password: string }) {
   const score = password ? results.filter((r) => r.ok).length : 0;
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg bg-surface p-4 shadow-inset" aria-live="polite">
+    <div className="flex flex-col gap-3 rounded-lg bg-surface p-3 shadow-inset" aria-live="polite">
       <div className="flex items-center gap-3">
         <div className="flex flex-1 gap-2" aria-hidden>
           {[0, 1, 2, 3].map((bar) => (
@@ -39,7 +39,7 @@ export function StrengthMeter({ password }: { password: string }) {
           {password ? LEVEL[score] : "Sin escribir"}
         </span>
       </div>
-      <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <ul className="grid grid-cols-2 gap-x-3 gap-y-1.5">
         {results.map((r) => (
           <li key={r.id} className={cn("flex items-center gap-2 text-caption", r.ok ? "text-text" : "text-text-muted")}>
             <span

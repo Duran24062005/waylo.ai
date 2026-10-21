@@ -30,7 +30,7 @@ export function SelectField({
   const id = useId();
 
   return (
-    <div className="flex min-w-0 flex-col gap-2">
+    <div className="flex min-w-0 flex-col gap-1.5">
       <label htmlFor={id} className="font-heading text-base font-medium text-text">
         {label}
       </label>
@@ -41,7 +41,7 @@ export function SelectField({
           id={id}
           aria-invalid={invalid ? true : undefined}
           aria-describedby={describedBy}
-          className={controlClasses(Boolean(invalid), "appearance-none pr-11")}
+          className={controlClasses(Boolean(invalid), "appearance-none pr-9")}
         >
           <option value="">{placeholder}</option>
           {options.map((option) => (

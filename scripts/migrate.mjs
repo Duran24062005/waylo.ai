@@ -23,3 +23,10 @@ await sql`create unique index if not exists personas_email_uq on personas (lower
 
 const [{ total }] = await sql`select count(*)::int as total from personas`;
 console.log(`Esquema listo. Personas registradas: ${total}`);
+
+// Google sign-in: those accounts have no password and no birth date.
+await sql`alter table personas alter column password_hash drop not null`;
+await sql`alter table personas alter column fecha_nacimiento drop not null`;
+await sql`alter table personas add column if not exists google_id text`;
+await sql`create unique index if not exists personas_google_id_uq on personas (google_id) where google_id is not null`;
+console.log("Columnas para Google listas.");

@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { AuthPanel } from "@/components/auth";
 
 export const metadata: Metadata = {
-  title: "Entrar | Navegador del paciente",
+  title: "Entrar",
 };
 
-export default function LoginPage() {
-  return <AuthPanel initialMode="login" />;
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const { error } = await searchParams;
+  return <AuthPanel initialMode="login" googleError={error === "google"} />;
 }

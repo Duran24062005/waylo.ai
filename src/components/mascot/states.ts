@@ -19,6 +19,8 @@ export const POSES: Record<MascotState, Pose> = {
   alert: { bodyScale: 1, bodyRotation: 0, eyeScaleX: 1, eyeScaleY: 0.86, lookX: 0 },
   success: { bodyScale: 1, bodyRotation: 0, eyeScaleX: 1, eyeScaleY: 0.82, lookX: 0 },
   // Lower, narrower eyes and a slight droop read as sad, never alarming.
+  // Turned to the left with the eyes shut: it is not looking at what is typed.
+  private: { bodyScale: 1, bodyRotation: -16, eyeScaleX: 1, eyeScaleY: 0.06, lookX: -7 },
   error: { bodyScale: 0.98, bodyRotation: -5, eyeScaleX: 1, eyeScaleY: 0.64, lookX: -2 },
 };
 
@@ -31,6 +33,7 @@ export const FOLLOWS_POINTER: Record<MascotState, boolean> = {
   alert: false,
   success: true,
   error: false,
+  private: false,
 };
 
 /** States where the mascot blinks now and then. */
@@ -42,6 +45,7 @@ export const BLINKS: Record<MascotState, boolean> = {
   alert: false,
   success: false,
   error: false,
+  private: false,
 };
 
 /** Eye travel from the pointer, in viewBox units, and the distance (px) that reaches it. */

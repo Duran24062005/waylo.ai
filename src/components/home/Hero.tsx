@@ -25,7 +25,7 @@ export function Hero({ loggedIn }: { loggedIn?: boolean }) {
     <MotionConfig reducedMotion="user">
       <div className="mx-auto grid w-full max-w-7xl items-center gap-12 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
         <motion.div variants={container} initial="hidden" animate="show" className="flex flex-col items-start gap-7">
-          <motion.h1 variants={part} className="font-script text-6xl leading-[1.05] text-title-gradient sm:text-7xl xl:text-8xl">
+          <motion.h1 variants={part} className="font-script text-[clamp(3rem,10vh,6.5rem)] leading-[1.05] text-title-gradient">
             Navegador del paciente
           </motion.h1>
 
@@ -57,7 +57,7 @@ export function Hero({ loggedIn }: { loggedIn?: boolean }) {
           className="relative mx-auto flex w-full max-w-md items-center justify-center lg:max-w-none"
         >
           <div aria-hidden="true" className="absolute inset-6 rounded-full bg-accent/15 blur-3xl" />
-          <Mascot state="idle" size={380} label="Mascota de Waylo" className="relative h-auto w-full max-w-[22rem] lg:max-w-[28rem]" />
+          <Mascot state="idle" size={380} label="Mascota de Waylo" className="relative h-auto w-[min(26rem,52vh)] max-w-full" />
         </motion.div>
       </div>
     </MotionConfig>

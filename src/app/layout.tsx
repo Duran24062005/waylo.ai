@@ -16,7 +16,7 @@ const poppins = Poppins({
 const pacifico = Pacifico({ weight: "400", subsets: ["latin"], variable: "--font-pacifico", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Navegador del paciente",
+  title: { default: "Waylo.ai", template: "%s | Waylo.ai" },
   description: "Orientación para saber a qué nivel de atención acudir.",
 };
 

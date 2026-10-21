@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Términos y condiciones | Waylo" };
+export const metadata: Metadata = { title: "Términos y condiciones" };
 
 export default function TerminosPage() {
   return (

@@ -40,6 +40,8 @@ const COPY = {
   },
 } as const;
 
+const GOOGLE_ERROR = "No pudimos entrar con Google. Intenta de nuevo.";
+
 const BIRTH_ERROR: Record<BirthDateError, string> = {
   incomplete: "Elige el día, el mes y el año.",
   invalid: "Esa fecha no existe. Revisa el día, el mes y el año.",
@@ -56,7 +58,7 @@ const toNumber = (value: string) => (value === "" ? null : Number(value));
 
 const ease = [...easing.standard] as [number, number, number, number];
 
-/** Extra fields grow in and out. Overflow is only clipped while the height animates, so focus rings stay visible. */
+/** Extra fields grow in and out. Overflow is only clipped while the height animates, so focus halos stay visible. */
 const reveal: Variants = {
   hidden: { height: 0, opacity: 0, y: -10, scale: 0.98, overflow: "hidden" },
   shown: {
@@ -83,7 +85,7 @@ function Reveal({ children, id }: { children: React.ReactNode; id: string }) {
   );
 }
 
-export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
+export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode; googleError?: boolean }) {
   const router = useRouter();
   const dateErrorId = useId();
   const consentErrorId = useId();
@@ -103,9 +105,10 @@ export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
   const [acepta, setAcepta] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; acepta?: string }>({});
-  const [formError, setFormError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(googleError ? GOOGLE_ERROR : null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const isRegistro = mode === "registro";
@@ -133,6 +136,11 @@ export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
   };
 
   const focusHandlers = { onFocus: () => setFocused(true), onBlur: () => setFocused(false) };
+  // While the password is focused the mascot looks away with its eyes closed.
+  const passwordFocusHandlers = {
+    onFocus: () => setPasswordFocused(true),
+    onBlur: () => setPasswordFocused(false),
+  };
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -178,25 +186,30 @@ export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
     ? "thinking"
     : formError
       ? "error"
-      : focused
-        ? "listening"
-        : isRegistro && birth.valid
-          ? "success"
-          : "idle";
+      : passwordFocused
+        ? "private"
+        : focused
+          ? "listening"
+          : isRegistro && birth.valid
+            ? "success"
+            : "idle";
 
   const copy = COPY[mode];
 
   return (
     <AuthShell mascotState={mascotState}>
       <motion.div
-        layout
+        initial={{ opacity: 0, y: 20, maxWidth: initialMode === "registro" ? 920 : 560 }}
+        animate={{ opacity: 1, y: 0, maxWidth: isRegistro ? 920 : 560 }}
         transition={{ duration: duration.slow, ease }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-xl rounded-xl bg-surface-raised p-6 shadow-raised sm:p-10"
+        className="w-full rounded-xl bg-surface-raised p-6 shadow-raised sm:p-8 short:p-5"
       >
         {/* Mode selector: the floating pill slides to the active option. */}
-        <div role="tablist" aria-label="Acceso" className="relative mb-8 grid grid-cols-2 rounded-lg bg-surface p-1.5 shadow-inset">
+        <div
+          role="tablist"
+          aria-label="Acceso"
+          className="relative mb-6 grid grid-cols-2 rounded-lg bg-surface p-1.5 shadow-inset short:mb-4"
+        >
           {(["login", "registro"] as const).map((tab) => (
             <button
               key={tab}
@@ -205,7 +218,7 @@ export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
               aria-selected={mode === tab}
               onClick={() => switchMode(tab)}
               className={cn(
-                "relative min-h-11 rounded-md font-heading text-body font-semibold transition-colors duration-[var(--duration-base)] ease-standard",
+                "relative h-11 rounded-md font-heading text-body font-semibold transition-colors duration-[var(--duration-base)] ease-standard short:h-10",
                 focusRing,
                 mode === tab ? "text-text" : "text-text-muted",
               )}
@@ -222,7 +235,7 @@ export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
           ))}
         </div>
 
-        <div className="mb-8 min-h-28">
+        <div className="mb-6 short:mb-3">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={mode}
@@ -230,149 +243,149 @@ export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: duration.base, ease }}
-              className="flex flex-col gap-2"
+              className="flex flex-col gap-1"
             >
-              <h1 className="font-script text-4xl leading-tight text-title-gradient sm:text-5xl">{copy.title}</h1>
-              <p className="text-body text-text-muted">{copy.intro}</p>
+              <h1 className="font-script text-[clamp(2rem,4.8vh,3rem)] leading-tight text-title-gradient">{copy.title}</h1>
+              <p className="text-[clamp(0.95rem,2vh,1.125rem)] text-text-muted">{copy.intro}</p>
             </motion.div>
           </AnimatePresence>
         </div>
 
         <form onSubmit={handleSubmit} method="post" noValidate className="flex flex-col">
-          <AnimatePresence initial={false}>
-            {isRegistro ? (
-              <Reveal id="nombre">
-                <div className="pb-6">
-                  <TextField
-                    label="Nombre (opcional)"
-                    name="nombre"
-                    autoComplete="name"
-                    leading={UserIcon}
-                    value={nombre}
-                    onChange={(e) => setNombre(e.target.value)}
-                    {...focusHandlers}
-                  />
-                </div>
-              </Reveal>
-            ) : null}
-          </AnimatePresence>
+          <div className={cn("grid gap-x-8 gap-y-5 short:gap-y-3", isRegistro && "lg:grid-cols-2")}>
+            <div className="flex flex-col gap-5 short:gap-3">
+              <AnimatePresence initial={false}>
+                {isRegistro ? (
+                  <Reveal id="nombre">
+                    <TextField
+                      label="Nombre (opcional)"
+                      name="nombre"
+                      autoComplete="name"
+                      leading={UserIcon}
+                      value={nombre}
+                      onChange={(e) => setNombre(e.target.value)}
+                      {...focusHandlers}
+                    />
+                  </Reveal>
+                ) : null}
+              </AnimatePresence>
 
-          <div className="flex flex-col gap-6">
-            <TextField
-              ref={emailRef}
-              label="Correo electrónico"
-              name="email"
-              type="email"
-              autoComplete="email"
-              inputMode="email"
-              leading={Mail01Icon}
-              value={email}
-              error={errors.email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                clear("email");
-              }}
-              {...focusHandlers}
-            />
-            <TextField
-              ref={passwordRef}
-              label="Contraseña"
-              name="password"
-              type={passwordVisible ? "text" : "password"}
-              autoComplete={isRegistro ? "new-password" : "current-password"}
-              leading={LockPasswordIcon}
-              value={password}
-              error={errors.password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                clear("password");
-              }}
-              trailing={(id) => (
-                <PasswordToggle
-                  visible={passwordVisible}
-                  onToggle={() => setPasswordVisible((v) => !v)}
-                  controls={id}
-                />
-              )}
-              {...focusHandlers}
-            />
+              <TextField
+                ref={emailRef}
+                label="Correo electrónico"
+                name="email"
+                type="email"
+                autoComplete="email"
+                inputMode="email"
+                leading={Mail01Icon}
+                value={email}
+                error={errors.email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  clear("email");
+                }}
+                {...focusHandlers}
+              />
+              <TextField
+                ref={passwordRef}
+                label="Contraseña"
+                name="password"
+                type={passwordVisible ? "text" : "password"}
+                autoComplete={isRegistro ? "new-password" : "current-password"}
+                leading={LockPasswordIcon}
+                value={password}
+                error={errors.password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  clear("password");
+                }}
+                trailing={(id) => (
+                  <PasswordToggle
+                    visible={passwordVisible}
+                    onToggle={() => setPasswordVisible((v) => !v)}
+                    controls={id}
+                  />
+                )}
+                {...passwordFocusHandlers}
+              />
+            </div>
+
+            <AnimatePresence initial={false}>
+              {isRegistro ? (
+                <Reveal id="extras">
+                  <div className="flex flex-col gap-5 short:gap-3">
+                    <StrengthMeter password={password} />
+
+                    <fieldset className="flex flex-col gap-2">
+                      <legend className="mb-2 font-heading text-base font-medium text-text">Fecha de nacimiento</legend>
+                      <div className="grid grid-cols-[1fr_1.6fr_1.2fr] gap-3">
+                        <SelectField
+                          label="Día"
+                          name="bday-day"
+                          autoComplete="bday-day"
+                          placeholder="Día"
+                          options={DAYS}
+                          value={parts.day}
+                          onChange={(e) => setParts((p) => ({ ...p, day: e.target.value }))}
+                          invalid={Boolean(birthError)}
+                          describedBy={birthError ? dateErrorId : undefined}
+                          {...focusHandlers}
+                        />
+                        <SelectField
+                          label="Mes"
+                          name="bday-month"
+                          autoComplete="bday-month"
+                          placeholder="Mes"
+                          options={MONTHS}
+                          value={parts.month}
+                          onChange={(e) => setParts((p) => ({ ...p, month: e.target.value }))}
+                          invalid={Boolean(birthError)}
+                          describedBy={birthError ? dateErrorId : undefined}
+                          {...focusHandlers}
+                        />
+                        <SelectField
+                          label="Año"
+                          name="bday-year"
+                          autoComplete="bday-year"
+                          placeholder="Año"
+                          options={years}
+                          value={parts.year}
+                          onChange={(e) => setParts((p) => ({ ...p, year: e.target.value }))}
+                          invalid={Boolean(birthError)}
+                          describedBy={birthError ? dateErrorId : undefined}
+                          {...focusHandlers}
+                        />
+                      </div>
+                      <div aria-live="polite" className="empty:hidden">
+                        {birthError ? <FieldError id={dateErrorId}>{birthError}</FieldError> : null}
+                      </div>
+                    </fieldset>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="flex cursor-pointer items-start gap-3 text-[clamp(0.95rem,2vh,1.125rem)] leading-snug text-text">
+                        <input
+                          type="checkbox"
+                          name="acepta"
+                          checked={acepta}
+                          onChange={(e) => {
+                            setAcepta(e.target.checked);
+                            clear("acepta");
+                          }}
+                          aria-invalid={errors.acepta ? true : undefined}
+                          aria-describedby={errors.acepta ? consentErrorId : undefined}
+                          className={`mt-0.5 size-6 shrink-0 cursor-pointer accent-[var(--accent)] ${focusRing}`}
+                        />
+                        <span>Autorizo que Waylo guarde mis datos para crear mi cuenta. Solo se usan para eso.</span>
+                      </label>
+                      {errors.acepta ? <FieldError id={consentErrorId}>{errors.acepta}</FieldError> : null}
+                    </div>
+                  </div>
+                </Reveal>
+              ) : null}
+            </AnimatePresence>
           </div>
 
-          <AnimatePresence initial={false}>
-            {isRegistro ? (
-              <Reveal id="extras">
-                <div className="flex flex-col gap-6 pt-6">
-                  <StrengthMeter password={password} />
-
-                  <fieldset className="flex flex-col gap-3">
-                    <legend className="mb-2 font-heading text-base font-medium text-text">Fecha de nacimiento</legend>
-                    <div className="grid grid-cols-[1fr_1.6fr_1.2fr] gap-3">
-                      <SelectField
-                        label="Día"
-                        name="bday-day"
-                        autoComplete="bday-day"
-                        placeholder="Día"
-                        options={DAYS}
-                        value={parts.day}
-                        onChange={(e) => setParts((p) => ({ ...p, day: e.target.value }))}
-                        invalid={Boolean(birthError)}
-                        describedBy={birthError ? dateErrorId : undefined}
-                        {...focusHandlers}
-                      />
-                      <SelectField
-                        label="Mes"
-                        name="bday-month"
-                        autoComplete="bday-month"
-                        placeholder="Mes"
-                        options={MONTHS}
-                        value={parts.month}
-                        onChange={(e) => setParts((p) => ({ ...p, month: e.target.value }))}
-                        invalid={Boolean(birthError)}
-                        describedBy={birthError ? dateErrorId : undefined}
-                        {...focusHandlers}
-                      />
-                      <SelectField
-                        label="Año"
-                        name="bday-year"
-                        autoComplete="bday-year"
-                        placeholder="Año"
-                        options={years}
-                        value={parts.year}
-                        onChange={(e) => setParts((p) => ({ ...p, year: e.target.value }))}
-                        invalid={Boolean(birthError)}
-                        describedBy={birthError ? dateErrorId : undefined}
-                        {...focusHandlers}
-                      />
-                    </div>
-                    <div aria-live="polite" className="empty:hidden">
-                      {birthError ? <FieldError id={dateErrorId}>{birthError}</FieldError> : null}
-                    </div>
-                  </fieldset>
-
-                  <div className="flex flex-col gap-2">
-                    <label className="flex cursor-pointer items-start gap-3 text-body text-text">
-                      <input
-                        type="checkbox"
-                        name="acepta"
-                        checked={acepta}
-                        onChange={(e) => {
-                          setAcepta(e.target.checked);
-                          clear("acepta");
-                        }}
-                        aria-invalid={errors.acepta ? true : undefined}
-                        aria-describedby={errors.acepta ? consentErrorId : undefined}
-                        className={`mt-1 size-6 shrink-0 cursor-pointer accent-[var(--accent)] ${focusRing}`}
-                      />
-                      <span>Autorizo que Waylo guarde mis datos para crear mi cuenta. Solo se usan para eso.</span>
-                    </label>
-                    {errors.acepta ? <FieldError id={consentErrorId}>{errors.acepta}</FieldError> : null}
-                  </div>
-                </div>
-              </Reveal>
-            ) : null}
-          </AnimatePresence>
-
-          <div role="alert" className="empty:hidden pt-6">
+          <div role="alert" className="empty:hidden pt-4">
             {formError ? <FieldError id="auth-error">{formError}</FieldError> : null}
           </div>
 
@@ -380,7 +393,7 @@ export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
             type="submit"
             disabled={submitting}
             aria-busy={submitting || undefined}
-            className={cn(buttonPrimary, "mt-6 w-full overflow-hidden")}
+            className={cn(buttonPrimary, "mt-5 h-12 w-full overflow-hidden short:mt-3")}
           >
             <span className="relative grid">
               <AnimatePresence mode="popLayout" initial={false}>
@@ -399,26 +412,21 @@ export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
           </button>
         </form>
 
-        <div className="my-6 flex items-center gap-4" aria-hidden>
+        <div className="my-4 flex items-center gap-4 short:my-2" aria-hidden>
           <span className="h-px flex-1 bg-border-strong/40" />
           <span className="font-heading text-caption text-text-muted">o</span>
           <span className="h-px flex-1 bg-border-strong/40" />
         </div>
 
-        {/* Google sign-in needs OAuth credentials that are not set up yet, so it stays disabled and says so. */}
-        <button type="button" disabled className={cn(buttonSoft, "w-full justify-between gap-3 px-4 sm:px-6")}>
-          <span className="inline-flex items-center gap-3 whitespace-nowrap">
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
-              <path d="M21.35 11.1H12v2.98h5.35c-.23 1.5-1.7 4.4-5.35 4.4a5.9 5.9 0 1 1 0-11.8c1.9 0 3.17.8 3.9 1.5l2.66-2.57C16.9 3.6 14.7 2.6 12 2.6a9.4 9.4 0 1 0 0 18.8c5.43 0 9-3.8 9-9.2 0-.62-.07-1.1-.15-1.1Z" />
-            </svg>
-            Continuar con Google
-          </span>
-          <span className="shrink-0 rounded-full bg-surface px-3 py-1 text-sm font-medium text-text-muted shadow-inset">
-            Próximamente
-          </span>
-        </button>
+        {/* A full page navigation: the server starts the Google sign-in and brings the person back to the chat. */}
+        <a href="/api/auth/google" className={cn(buttonSoft, "h-12 w-full gap-3")}>
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+            <path fill="currentColor" d="M21.35 11.1H12v2.98h5.35c-.23 1.5-1.7 4.4-5.35 4.4a5.9 5.9 0 1 1 0-11.8c1.9 0 3.17.8 3.9 1.5l2.66-2.57C16.9 3.6 14.7 2.6 12 2.6a9.4 9.4 0 1 0 0 18.8c5.43 0 9-3.8 9-9.2 0-.62-.07-1.1-.15-1.1Z" />
+          </svg>
+          Continuar con Google
+        </a>
 
-        <p className="mt-6 text-center text-caption text-text-muted">
+        <p className="mt-4 text-center text-caption text-text-muted short:mt-2">
           Al continuar aceptas la{" "}
           <Link href="/privacidad" className={cn("link-anim rounded-sm font-semibold text-text", focusRing)}>
             Política de privacidad
