@@ -44,8 +44,9 @@ describe("detectRedFlag", () => {
     expect(detectRedFlag(text).matched).toBe(false);
   });
 
-  it("expone el mensaje fijo de urgencia", () => {
-    expect(RED_FLAG_MESSAGE).toMatch(/urgencia vital/i);
-    expect(RED_FLAG_MESSAGE).toMatch(/Urgencias/);
+  it("expone el mensaje fijo de urgencia exacto de AGENTS.md", () => {
+    expect(RED_FLAG_MESSAGE).toBe(
+      "Esto requiere atención inmediata. Por favor, acude al centro de Urgencias más cercano o llama de inmediato a la línea de emergencias médicas de tu ciudad.",
+    );
   });
 });

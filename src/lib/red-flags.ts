@@ -1,5 +1,5 @@
 export const RED_FLAG_MESSAGE =
-  "Esto puede ser una urgencia vital. Por favor, acude de inmediato al centro de salud/Urgencias más cercano o comunícate con la línea de emergencias médicas de tu localidad.";
+  "Esto requiere atención inmediata. Por favor, acude al centro de Urgencias más cercano o llama de inmediato a la línea de emergencias médicas de tu ciudad.";
 
 interface RedFlagRule {
   id: string;
