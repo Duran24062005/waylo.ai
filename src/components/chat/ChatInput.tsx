@@ -65,8 +65,7 @@ export function ChatInput({ value, pending, onChange, onSubmit, onFocus, onBlur 
           aria-label="Enviar mensaje"
           className={cn(
             "inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-soft",
-            "transition-[transform,box-shadow,opacity] duration-[var(--duration-base)] ease-standard",
-            "enabled:hover:-translate-y-0.5 enabled:hover:shadow-raised enabled:active:translate-y-0 enabled:active:shadow-pressed",
+            "lift lift-sm transition-opacity",
             "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
             "disabled:cursor-not-allowed disabled:opacity-40",
           )}

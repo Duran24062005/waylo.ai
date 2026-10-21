@@ -2,7 +2,7 @@ import { z } from "zod";
 import { isValidBirthDate } from "@/lib/birthdate";
 
 export const registroSchema = z.object({
-  nombre: z.string().trim().min(2, "Escribe tu nombre.").max(80, "El nombre es muy largo."),
+  nombre: z.string().trim().max(80, "El nombre es muy largo.").default(""),
   email: z.string().trim().toLowerCase().max(120).regex(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, "Revisa tu correo."),
   password: z.string().min(8, "Usa al menos 8 caracteres.").max(128, "La contraseña es muy larga."),
   dia: z.number().int(),

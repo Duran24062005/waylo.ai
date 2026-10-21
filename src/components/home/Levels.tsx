@@ -40,8 +40,8 @@ export function Levels() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-16">
-        <section aria-labelledby="niveles" className="flex flex-col gap-8">
-          <h2 id="niveles" className="font-heading text-headline font-semibold text-text">
+        <section id="niveles" aria-labelledby="niveles-titulo" className="flex flex-col gap-8">
+          <h2 id="niveles-titulo" className="font-heading text-headline font-semibold text-text">
             Tres niveles de atención
           </h2>
           <div className="grid gap-6 md:grid-cols-3">
@@ -50,19 +50,19 @@ export function Levels() {
                 key={level.title}
                 {...card}
                 transition={{ duration: duration.slow, ease, delay: index * 0.1 }}
-                whileHover={{ y: -6 }}
-                className="rounded-xl bg-surface-raised p-8 shadow-soft transition-shadow duration-[var(--duration-base)] ease-standard hover:shadow-raised"
               >
+                <div className="lift lift-lg h-full rounded-xl bg-surface-raised p-8 shadow-soft">
                 <span aria-hidden className={cn("mb-5 block size-4 rounded-full shadow-soft", level.dot)} />
                 <h3 className="font-heading text-title font-semibold text-text">{level.title}</h3>
                 <p className="mt-3 text-body-lg text-text-muted">{level.text}</p>
+                </div>
               </motion.article>
             ))}
           </div>
         </section>
 
-        <section aria-labelledby="como" className="flex flex-col gap-8">
-          <h2 id="como" className="font-heading text-headline font-semibold text-text">
+        <section id="como" aria-labelledby="como-titulo" className="flex flex-col gap-8">
+          <h2 id="como-titulo" className="font-heading text-headline font-semibold text-text">
             Cómo funciona
           </h2>
           <ol className="grid gap-6 md:grid-cols-3">

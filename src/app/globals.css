@@ -1,36 +1,37 @@
 @import "tailwindcss";
 
 /*
- * Semantic tokens. Ratios are WCAG 2.x, checked against surface and surface-raised.
- * Text tokens (text, text-muted, accent, success, warning, danger) are >= 4.5:1 on both surfaces.
- * Each *-foreground is >= 4.5:1 on its own fill.
- * border-strong and focus-ring are >= 3:1 (non-text UI). border is decorative only.
+ * Monochrome palette: white, black and grays only. Levels of care are told apart by
+ * label, icon and weight (black > dark gray > mid gray), never by hue.
+ * Text tokens are >= 4.5:1 on surface and surface-raised. Each *-foreground is >= 4.5:1 on its fill.
+ * border-strong and focus-ring are >= 3:1 (non-text UI).
  */
 /* tokens:light */
 :root {
-  --surface: #f5f7fa;
+  --surface: #f1f1f1;
   --surface-raised: #ffffff;
-  --border: #dde3ea;
-  --border-strong: #758393;
-  --text: #14202e;
-  --text-muted: #4a5868;
-  --accent: #1d5bbf;
+  --border: #dcdcdc;
+  --border-strong: #8c8c8c;
+  --text: #0a0a0a;
+  --text-muted: #585858;
+  --accent: #111111;
   --accent-foreground: #ffffff;
-  --success: #1b7340;
+  --success: #6a6a6a;
   --success-foreground: #ffffff;
-  --warning: #8a4b00;
+  --warning: #3f3f3f;
   --warning-foreground: #ffffff;
-  /* Urgencias red: kept saturated on purpose, do not lighten. */
-  --danger: #b42318;
+  /* Urgencias: the strongest tone of the palette (pure black / pure white). Do not soften. */
+  --danger: #000000;
   --danger-foreground: #ffffff;
-  --focus-ring: #1d5bbf;
-  --shadow-ambient: rgb(20 32 46 / 0.07);
-  --shadow-key: rgb(20 32 46 / 0.1);
-  --shadow-deep: rgb(20 32 46 / 0.2);
+  --focus-ring: #111111;
+  --shadow-ambient: rgb(0 0 0 / 0.07);
+  --shadow-key: rgb(0 0 0 / 0.1);
+  --shadow-deep: rgb(0 0 0 / 0.22);
   --shadow-highlight: rgb(255 255 255 / 0.95);
-  /* Title gradient. Both ends are >= 3:1 on the surface, as large text needs. */
-  --title-from: #6d28d9;
-  --title-to: #d9480f;
+  /* Cursive titles: gradient of black tones, with a gray extrusion for depth. */
+  --title-from: #000000;
+  --title-to: #5c5c5c;
+  --title-depth: #b4b4b4;
 }
 
 :root {
@@ -53,57 +54,61 @@
   --duration-fast: 220ms;
   --duration-base: 420ms;
   --duration-slow: 700ms;
+  /* Theme crossfade: slow and gradual. */
+  --duration-theme: 1100ms;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --surface: #0f141a;
-    --surface-raised: #1a2129;
-    --border: #2c3642;
-    --border-strong: #6f7d8d;
-    --text: #eef2f6;
-    --text-muted: #a9b4c0;
-    --accent: #78aeff;
-    --accent-foreground: #0a1b33;
-    --success: #4cc38a;
-    --success-foreground: #04210f;
-    --warning: #f5b841;
-    --warning-foreground: #241600;
-    --danger: #ff5a52;
-    --danger-foreground: #1f0302;
-    --focus-ring: #8fbcff;
+    --surface: #0b0b0b;
+    --surface-raised: #171717;
+    --border: #2a2a2a;
+    --border-strong: #7a7a7a;
+    --text: #f5f5f5;
+    --text-muted: #a6a6a6;
+    --accent: #f5f5f5;
+    --accent-foreground: #0b0b0b;
+    --success: #9a9a9a;
+    --success-foreground: #000000;
+    --warning: #cfcfcf;
+    --warning-foreground: #000000;
+    --danger: #ffffff;
+    --danger-foreground: #000000;
+    --focus-ring: #ffffff;
     --shadow-ambient: rgb(0 0 0 / 0.4);
     --shadow-key: rgb(0 0 0 / 0.5);
     --shadow-deep: rgb(0 0 0 / 0.7);
     --shadow-highlight: rgb(255 255 255 / 0.07);
-    --title-from: #b794f6;
-    --title-to: #ffc9a0;
+    --title-from: #ffffff;
+    --title-to: #8f8f8f;
+    --title-depth: #3d3d3d;
   }
 }
 
 /* tokens:dark */
 :root[data-theme="dark"] {
-  --surface: #0f141a;
-  --surface-raised: #1a2129;
-  --border: #2c3642;
-  --border-strong: #6f7d8d;
-  --text: #eef2f6;
-  --text-muted: #a9b4c0;
-  --accent: #78aeff;
-  --accent-foreground: #0a1b33;
-  --success: #4cc38a;
-  --success-foreground: #04210f;
-  --warning: #f5b841;
-  --warning-foreground: #241600;
-  --danger: #ff5a52;
-  --danger-foreground: #1f0302;
-  --focus-ring: #8fbcff;
+  --surface: #0b0b0b;
+  --surface-raised: #171717;
+  --border: #2a2a2a;
+  --border-strong: #7a7a7a;
+  --text: #f5f5f5;
+  --text-muted: #a6a6a6;
+  --accent: #f5f5f5;
+  --accent-foreground: #0b0b0b;
+  --success: #9a9a9a;
+  --success-foreground: #000000;
+  --warning: #cfcfcf;
+  --warning-foreground: #000000;
+  --danger: #ffffff;
+  --danger-foreground: #000000;
+  --focus-ring: #ffffff;
   --shadow-ambient: rgb(0 0 0 / 0.4);
   --shadow-key: rgb(0 0 0 / 0.5);
   --shadow-deep: rgb(0 0 0 / 0.7);
   --shadow-highlight: rgb(255 255 255 / 0.07);
-  --title-from: #b794f6;
-  --title-to: #ffc9a0;
+  --title-from: #ffffff;
+  --title-to: #8f8f8f;
+  --title-depth: #3d3d3d;
 }
 
 :root[data-theme="light"] {
@@ -156,8 +161,10 @@
 
 @theme static {
   --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
-  /* Overshoot curve: reserved for the success moment. */
+  /* Overshoot curve: reserved for the success moment and the theme icons. */
   --ease-emphasis: cubic-bezier(0.34, 1.4, 0.64, 1);
+  /* Soft in-out, for slow crossfades. */
+  --ease-gentle: cubic-bezier(0.45, 0, 0.2, 1);
 }
 
 @theme {
@@ -194,11 +201,21 @@
   --radius-xl: 28px;
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   :root {
     --duration-fast: 0ms;
     --duration-base: 0ms;
     --duration-slow: 0ms;
+    --duration-theme: 0ms;
   }
 
   ::view-transition-group(*),
@@ -216,40 +233,116 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Page titles: script face with a gradient, like the Waylo lettering. */
+/*
+ * Cursive titles: black-tone gradient, a stacked extrusion for depth, and extra padding so the
+ * descenders and the italic overhang are painted (background-clip: text only paints inside the box).
+ */
 @utility text-title-gradient {
   font-family: var(--font-pacifico), cursive;
   font-weight: 400;
+  display: block;
+  width: fit-content;
+  max-width: 100%;
   background-image: linear-gradient(100deg, var(--title-from), var(--title-to));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  padding: 0.12em 0.12em 0.18em;
-  margin-inline: -0.12em;
-  filter: drop-shadow(0 3px 6px var(--shadow-key));
+  padding: 0.14em 0.2em 0.36em;
+  margin: -0.14em -0.2em -0.16em;
+  filter: drop-shadow(0 1px 0 var(--title-depth)) drop-shadow(0 2px 0 var(--title-depth))
+    drop-shadow(0 8px 10px var(--shadow-key));
 }
 
-/* Respects the theme crossfade and gives surfaces a slow, smooth color change. */
+/*
+ * Hover language. One system for every interactive surface:
+ *  - the surface rises with transform only (translateY), the shadow fades in on a pseudo-element's opacity;
+ *  - pressing sinks it a little (scale), and leaving plays the same curve back, with no restart;
+ *  - hover rules only apply to devices that can hover, so touch screens never get a stuck state;
+ *  - reduced motion zeroes the duration tokens.
+ */
+@utility lift {
+  position: relative;
+  transition: transform var(--duration-base) var(--ease-standard);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    box-shadow: 0 2px 4px var(--shadow-ambient), 0 18px 44px var(--shadow-key);
+    transition: opacity var(--duration-base) var(--ease-standard);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover:not(:disabled, [aria-disabled="true"]) {
+      transform: translateY(var(--lift, -3px));
+    }
+
+    &:hover:not(:disabled, [aria-disabled="true"])::after {
+      opacity: 1;
+    }
+  }
+
+  &:active:not(:disabled, [aria-disabled="true"]) {
+    transform: translateY(0) scale(0.98);
+    transition-duration: var(--duration-fast);
+  }
+}
+
+@utility lift-sm {
+  --lift: -2px;
+}
+
+@utility lift-lg {
+  --lift: -6px;
+}
+
+/* Text links: the underline sweeps in from the left and settles; a faint one stays for non-hover users. */
+@utility link-anim {
+  position: relative;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 30%, transparent);
+  text-underline-offset: 5px;
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--duration-base) var(--ease-standard);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover::after {
+      transform: scaleX(1);
+    }
+  }
+}
+
+/* Theme crossfade: both snapshots fade together, slowly and with a soft in-out curve. */
 ::view-transition-old(root) {
-  animation: theme-fade-out var(--duration-slow) var(--ease-standard) both;
+  animation: theme-fade-out var(--duration-theme) var(--ease-gentle) both;
 }
 
 ::view-transition-new(root) {
-  animation: theme-fade-in var(--duration-slow) var(--ease-standard) both;
+  animation: theme-fade-in var(--duration-theme) var(--ease-gentle) both;
 }
 
 /* Fallback when document.startViewTransition is missing. */
-html.theme-fade {
-  animation: theme-fade-soft var(--duration-slow) var(--ease-standard);
-}
-
-@keyframes theme-fade-soft {
-  from {
-    opacity: 0.6;
-  }
-  to {
-    opacity: 1;
-  }
+html.theme-fade,
+html.theme-fade body,
+html.theme-fade * {
+  transition:
+    background-color var(--duration-theme) var(--ease-gentle),
+    color var(--duration-theme) var(--ease-gentle) !important;
 }
 
 @keyframes theme-fade-out {

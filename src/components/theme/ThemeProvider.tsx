@@ -91,7 +91,7 @@ function runThemeChange(update: () => void) {
   void root.offsetWidth;
   root.classList.add(FADE_CLASS);
   update();
-  window.setTimeout(() => root.classList.remove(FADE_CLASS), durationMs.base);
+  window.setTimeout(() => root.classList.remove(FADE_CLASS), durationMs.theme);
 }
 
 export interface ThemeContextValue {

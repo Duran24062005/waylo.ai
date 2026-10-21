@@ -1,0 +1,435 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useId, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import { AnimatePresence, motion, type Variants } from "motion/react";
+import { LockPasswordIcon, Mail01Icon, UserIcon } from "@hugeicons/core-free-icons";
+import { buttonPrimary, buttonSoft } from "@/components/ui/buttons";
+import { duration, easing } from "@/design/motion";
+import {
+  birthYearOptions,
+  isValidBirthDate,
+  MONTHS_ES,
+  type BirthDateError,
+  type BirthDateInput,
+} from "@/lib/birthdate";
+import { cn } from "@/lib/utils";
+import { AuthShell } from "./AuthShell";
+import { FieldError } from "./FieldError";
+import { PasswordToggle } from "./PasswordToggle";
+import { SelectField, type SelectOption } from "./SelectField";
+import { StrengthMeter } from "./StrengthMeter";
+import { TextField } from "./TextField";
+import { focusRing } from "./styles";
+import { validateLogin, validateRegistro } from "./validation";
+
+export type AuthMode = "login" | "registro";
+
+const COPY = {
+  login: {
+    title: "Bienvenido de nuevo",
+    intro: "Entra para seguir con tu orientación.",
+    action: "Entrar",
+  },
+  registro: {
+    title: "Crea tu cuenta",
+    intro: "Empieza en minutos. Solo te pedimos lo necesario.",
+    action: "Crear mi cuenta",
+  },
+} as const;
+
+const BIRTH_ERROR: Record<BirthDateError, string> = {
+  incomplete: "Elige el día, el mes y el año.",
+  invalid: "Esa fecha no existe. Revisa el día, el mes y el año.",
+  future: "Esa fecha todavía no ha llegado. Revisa el año.",
+  too_old: "Revisa el año. Debe ser de los últimos 120 años.",
+};
+
+const DAYS: SelectOption[] = Array.from({ length: 31 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }));
+const MONTHS: SelectOption[] = MONTHS_ES.map((name, i) => ({
+  value: String(i + 1),
+  label: name.charAt(0).toUpperCase() + name.slice(1),
+}));
+const toNumber = (value: string) => (value === "" ? null : Number(value));
+
+const ease = [...easing.standard] as [number, number, number, number];
+
+/** Extra fields grow in and out. Overflow is only clipped while the height animates, so focus rings stay visible. */
+const reveal: Variants = {
+  hidden: { height: 0, opacity: 0, y: -10, scale: 0.98, overflow: "hidden" },
+  shown: {
+    height: "auto",
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: duration.slow, ease },
+    transitionEnd: { overflow: "visible" },
+  },
+};
+
+function Reveal({ children, id }: { children: React.ReactNode; id: string }) {
+  return (
+    <motion.div
+      key={id}
+      variants={reveal}
+      initial="hidden"
+      animate="shown"
+      exit={{ height: 0, opacity: 0, y: -10, scale: 0.98, overflow: "hidden", transition: { duration: duration.base, ease } }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+export function AuthPanel({ initialMode }: { initialMode: AuthMode }) {
+  const router = useRouter();
+  const dateErrorId = useId();
+  const consentErrorId = useId();
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const [today] = useState(() => new Date());
+  const years = useMemo<SelectOption[]>(
+    () => birthYearOptions(today).map((y) => ({ value: String(y), label: String(y) })),
+    [today],
+  );
+
+  const [mode, setMode] = useState<AuthMode>(initialMode);
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [parts, setParts] = useState({ day: "", month: "", year: "" });
+  const [acepta, setAcepta] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string; acepta?: string }>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const isRegistro = mode === "registro";
+  const input: BirthDateInput = {
+    day: toNumber(parts.day),
+    month: toNumber(parts.month),
+    year: toNumber(parts.year),
+  };
+  const birth = isValidBirthDate(input, today);
+  const allChosen = Boolean(parts.day && parts.month && parts.year);
+  const birthError = isRegistro && !birth.valid && (submitted || allChosen) ? BIRTH_ERROR[birth.error] : null;
+
+  function switchMode(next: AuthMode) {
+    if (next === mode) return;
+    setMode(next);
+    setErrors({});
+    setFormError(null);
+    setSubmitted(false);
+    window.history.replaceState(null, "", next === "login" ? "/login" : "/registro");
+  }
+
+  const clear = (field: "email" | "password" | "acepta") => {
+    setFormError(null);
+    setErrors((current) => (current[field] ? { ...current, [field]: undefined } : current));
+  };
+
+  const focusHandlers = { onFocus: () => setFocused(true), onBlur: () => setFocused(false) };
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const found = isRegistro ? validateRegistro({ nombre, email, password, acepta }) : validateLogin(email, password);
+    flushSync(() => {
+      setSubmitted(true);
+      setErrors(found);
+      setFormError(null);
+    });
+
+    if (found.email) return emailRef.current?.focus();
+    if (found.password) return passwordRef.current?.focus();
+    if (isRegistro && (!birth.valid || (found as { acepta?: string }).acepta)) return;
+
+    setSubmitting(true);
+    try {
+      const response = await fetch(isRegistro ? "/api/registro" : "/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          isRegistro
+            ? { nombre, email, password, dia: input.day, mes: input.month, anio: input.year, acepta }
+            : { email, password },
+        ),
+      });
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as { error?: string; campo?: string } | null;
+        const message = body?.error ?? "No pudimos completar la acción. Intenta de nuevo.";
+        if (body?.campo === "email") setErrors({ email: message });
+        else setFormError(message);
+        return;
+      }
+      router.push("/chat");
+      router.refresh();
+    } catch {
+      setFormError("No pudimos conectarnos. Revisa tu internet e intenta de nuevo.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const mascotState = submitting
+    ? "thinking"
+    : formError
+      ? "error"
+      : focused
+        ? "listening"
+        : isRegistro && birth.valid
+          ? "success"
+          : "idle";
+
+  const copy = COPY[mode];
+
+  return (
+    <AuthShell mascotState={mascotState}>
+      <motion.div
+        layout
+        transition={{ duration: duration.slow, ease }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-xl rounded-xl bg-surface-raised p-6 shadow-raised sm:p-10"
+      >
+        {/* Mode selector: the floating pill slides to the active option. */}
+        <div role="tablist" aria-label="Acceso" className="relative mb-8 grid grid-cols-2 rounded-lg bg-surface p-1.5 shadow-inset">
+          {(["login", "registro"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={mode === tab}
+              onClick={() => switchMode(tab)}
+              className={cn(
+                "relative min-h-11 rounded-md font-heading text-body font-semibold transition-colors duration-[var(--duration-base)] ease-standard",
+                focusRing,
+                mode === tab ? "text-text" : "text-text-muted",
+              )}
+            >
+              {mode === tab ? (
+                <motion.span
+                  layoutId="auth-pill"
+                  transition={{ duration: duration.slow, ease }}
+                  className="absolute inset-0 rounded-md bg-surface-raised shadow-soft"
+                />
+              ) : null}
+              <span className="relative">{tab === "login" ? "Entrar" : "Crear cuenta"}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="mb-8 min-h-28">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={mode}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: duration.base, ease }}
+              className="flex flex-col gap-2"
+            >
+              <h1 className="font-script text-4xl leading-tight text-title-gradient sm:text-5xl">{copy.title}</h1>
+              <p className="text-body text-text-muted">{copy.intro}</p>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        <form onSubmit={handleSubmit} method="post" noValidate className="flex flex-col">
+          <AnimatePresence initial={false}>
+            {isRegistro ? (
+              <Reveal id="nombre">
+                <div className="pb-6">
+                  <TextField
+                    label="Nombre (opcional)"
+                    name="nombre"
+                    autoComplete="name"
+                    leading={UserIcon}
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    {...focusHandlers}
+                  />
+                </div>
+              </Reveal>
+            ) : null}
+          </AnimatePresence>
+
+          <div className="flex flex-col gap-6">
+            <TextField
+              ref={emailRef}
+              label="Correo electrónico"
+              name="email"
+              type="email"
+              autoComplete="email"
+              inputMode="email"
+              leading={Mail01Icon}
+              value={email}
+              error={errors.email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                clear("email");
+              }}
+              {...focusHandlers}
+            />
+            <TextField
+              ref={passwordRef}
+              label="Contraseña"
+              name="password"
+              type={passwordVisible ? "text" : "password"}
+              autoComplete={isRegistro ? "new-password" : "current-password"}
+              leading={LockPasswordIcon}
+              value={password}
+              error={errors.password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clear("password");
+              }}
+              trailing={(id) => (
+                <PasswordToggle
+                  visible={passwordVisible}
+                  onToggle={() => setPasswordVisible((v) => !v)}
+                  controls={id}
+                />
+              )}
+              {...focusHandlers}
+            />
+          </div>
+
+          <AnimatePresence initial={false}>
+            {isRegistro ? (
+              <Reveal id="extras">
+                <div className="flex flex-col gap-6 pt-6">
+                  <StrengthMeter password={password} />
+
+                  <fieldset className="flex flex-col gap-3">
+                    <legend className="mb-2 font-heading text-base font-medium text-text">Fecha de nacimiento</legend>
+                    <div className="grid grid-cols-[1fr_1.6fr_1.2fr] gap-3">
+                      <SelectField
+                        label="Día"
+                        name="bday-day"
+                        autoComplete="bday-day"
+                        placeholder="Día"
+                        options={DAYS}
+                        value={parts.day}
+                        onChange={(e) => setParts((p) => ({ ...p, day: e.target.value }))}
+                        invalid={Boolean(birthError)}
+                        describedBy={birthError ? dateErrorId : undefined}
+                        {...focusHandlers}
+                      />
+                      <SelectField
+                        label="Mes"
+                        name="bday-month"
+                        autoComplete="bday-month"
+                        placeholder="Mes"
+                        options={MONTHS}
+                        value={parts.month}
+                        onChange={(e) => setParts((p) => ({ ...p, month: e.target.value }))}
+                        invalid={Boolean(birthError)}
+                        describedBy={birthError ? dateErrorId : undefined}
+                        {...focusHandlers}
+                      />
+                      <SelectField
+                        label="Año"
+                        name="bday-year"
+                        autoComplete="bday-year"
+                        placeholder="Año"
+                        options={years}
+                        value={parts.year}
+                        onChange={(e) => setParts((p) => ({ ...p, year: e.target.value }))}
+                        invalid={Boolean(birthError)}
+                        describedBy={birthError ? dateErrorId : undefined}
+                        {...focusHandlers}
+                      />
+                    </div>
+                    <div aria-live="polite" className="empty:hidden">
+                      {birthError ? <FieldError id={dateErrorId}>{birthError}</FieldError> : null}
+                    </div>
+                  </fieldset>
+
+                  <div className="flex flex-col gap-2">
+                    <label className="flex cursor-pointer items-start gap-3 text-body text-text">
+                      <input
+                        type="checkbox"
+                        name="acepta"
+                        checked={acepta}
+                        onChange={(e) => {
+                          setAcepta(e.target.checked);
+                          clear("acepta");
+                        }}
+                        aria-invalid={errors.acepta ? true : undefined}
+                        aria-describedby={errors.acepta ? consentErrorId : undefined}
+                        className={`mt-1 size-6 shrink-0 cursor-pointer accent-[var(--accent)] ${focusRing}`}
+                      />
+                      <span>Autorizo que Waylo guarde mis datos para crear mi cuenta. Solo se usan para eso.</span>
+                    </label>
+                    {errors.acepta ? <FieldError id={consentErrorId}>{errors.acepta}</FieldError> : null}
+                  </div>
+                </div>
+              </Reveal>
+            ) : null}
+          </AnimatePresence>
+
+          <div role="alert" className="empty:hidden pt-6">
+            {formError ? <FieldError id="auth-error">{formError}</FieldError> : null}
+          </div>
+
+          <button
+            type="submit"
+            disabled={submitting}
+            aria-busy={submitting || undefined}
+            className={cn(buttonPrimary, "mt-6 w-full overflow-hidden")}
+          >
+            <span className="relative grid">
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.span
+                  key={submitting ? "wait" : mode}
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -14 }}
+                  transition={{ duration: duration.base, ease }}
+                  className="col-start-1 row-start-1"
+                >
+                  {submitting ? "Un momento…" : copy.action}
+                </motion.span>
+              </AnimatePresence>
+            </span>
+          </button>
+        </form>
+
+        <div className="my-6 flex items-center gap-4" aria-hidden>
+          <span className="h-px flex-1 bg-border-strong/40" />
+          <span className="font-heading text-caption text-text-muted">o</span>
+          <span className="h-px flex-1 bg-border-strong/40" />
+        </div>
+
+        {/* Google sign-in needs OAuth credentials that are not set up yet, so it stays disabled and says so. */}
+        <button type="button" disabled className={cn(buttonSoft, "w-full justify-between gap-3 px-4 sm:px-6")}>
+          <span className="inline-flex items-center gap-3 whitespace-nowrap">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor">
+              <path d="M21.35 11.1H12v2.98h5.35c-.23 1.5-1.7 4.4-5.35 4.4a5.9 5.9 0 1 1 0-11.8c1.9 0 3.17.8 3.9 1.5l2.66-2.57C16.9 3.6 14.7 2.6 12 2.6a9.4 9.4 0 1 0 0 18.8c5.43 0 9-3.8 9-9.2 0-.62-.07-1.1-.15-1.1Z" />
+            </svg>
+            Continuar con Google
+          </span>
+          <span className="shrink-0 rounded-full bg-surface px-3 py-1 text-sm font-medium text-text-muted shadow-inset">
+            Próximamente
+          </span>
+        </button>
+
+        <p className="mt-6 text-center text-caption text-text-muted">
+          Al continuar aceptas la{" "}
+          <Link href="/privacidad" className={cn("link-anim rounded-sm font-semibold text-text", focusRing)}>
+            Política de privacidad
+          </Link>{" "}
+          y los{" "}
+          <Link href="/terminos" className={cn("link-anim rounded-sm font-semibold text-text", focusRing)}>
+            Términos y condiciones
+          </Link>
+          .
+        </p>
+      </motion.div>
+    </AuthShell>
+  );
+}

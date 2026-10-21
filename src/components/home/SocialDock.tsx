@@ -89,10 +89,7 @@ export function SocialDock() {
                   onHoverEnd={hide}
                   onFocus={() => show(link.id)}
                   onBlur={hide}
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={{ duration: duration.fast, ease }}
-                  className="flex size-11 items-center justify-center rounded-full text-text hover:bg-surface focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+                  className="lift lift-sm flex size-11 items-center justify-center rounded-full bg-surface-raised text-text shadow-soft focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                 >
                   <HugeiconsIcon icon={icon} aria-hidden="true" className="size-6" strokeWidth={2} />
                 </motion.a>

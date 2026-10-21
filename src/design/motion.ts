@@ -4,6 +4,7 @@ export const durationMs = {
   fast: 220,
   base: 420,
   slow: 700,
+  theme: 1100,
 } as const;
 
 /** Seconds, for GSAP and motion. */

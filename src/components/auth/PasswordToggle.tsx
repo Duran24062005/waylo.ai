@@ -20,8 +20,7 @@ export function PasswordToggle({ visible, onToggle, controls }: PasswordTogglePr
       aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
       className={cn(
         "absolute inset-y-0 right-0 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md",
-        "text-text-muted hover:text-text",
-        "transition-colors duration-[var(--duration-fast)] ease-standard",
+        "lift lift-sm text-text-muted hover:text-text",
         focusRing,
       )}
     >
