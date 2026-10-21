@@ -24,8 +24,13 @@
   --danger: #b42318;
   --danger-foreground: #ffffff;
   --focus-ring: #1d5bbf;
-  --shadow-ambient: rgb(20 32 46 / 0.06);
-  --shadow-key: rgb(20 32 46 / 0.08);
+  --shadow-ambient: rgb(20 32 46 / 0.07);
+  --shadow-key: rgb(20 32 46 / 0.1);
+  --shadow-deep: rgb(20 32 46 / 0.2);
+  --shadow-highlight: rgb(255 255 255 / 0.95);
+  /* Title gradient. Both ends are >= 3:1 on the surface, as large text needs. */
+  --title-from: #6d28d9;
+  --title-to: #d9480f;
 }
 
 :root {
@@ -44,9 +49,10 @@
   --ring: var(--focus-ring);
   --destructive: var(--danger);
 
-  --duration-fast: 150ms;
-  --duration-base: 250ms;
-  --duration-slow: 400ms;
+  /* Longer on purpose: only transform and opacity move, so they stay smooth at 120 Hz. */
+  --duration-fast: 220ms;
+  --duration-base: 420ms;
+  --duration-slow: 700ms;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -68,6 +74,10 @@
     --focus-ring: #8fbcff;
     --shadow-ambient: rgb(0 0 0 / 0.4);
     --shadow-key: rgb(0 0 0 / 0.5);
+    --shadow-deep: rgb(0 0 0 / 0.7);
+    --shadow-highlight: rgb(255 255 255 / 0.07);
+    --title-from: #b794f6;
+    --title-to: #ffc9a0;
   }
 }
 
@@ -90,6 +100,10 @@
   --focus-ring: #8fbcff;
   --shadow-ambient: rgb(0 0 0 / 0.4);
   --shadow-key: rgb(0 0 0 / 0.5);
+  --shadow-deep: rgb(0 0 0 / 0.7);
+  --shadow-highlight: rgb(255 255 255 / 0.07);
+  --title-from: #b794f6;
+  --title-to: #ffc9a0;
 }
 
 :root[data-theme="light"] {
@@ -129,8 +143,15 @@
   --color-ring: var(--ring);
   --color-destructive: var(--destructive);
 
-  --shadow-soft: 0 1px 2px var(--shadow-ambient), 0 4px 16px var(--shadow-key);
-  --shadow-raised: 0 2px 6px var(--shadow-ambient), 0 12px 32px var(--shadow-key);
+  /* Depth: raised surfaces. Inverse depth (inset): fields and pressed controls. No borders. */
+  --shadow-soft: 0 1px 1px var(--shadow-ambient), 0 6px 18px var(--shadow-key), inset 0 1px 0 var(--shadow-highlight);
+  --shadow-raised: 0 2px 4px var(--shadow-ambient), 0 18px 44px var(--shadow-key), inset 0 1px 0 var(--shadow-highlight);
+  --shadow-inset: inset 0 3px 8px var(--shadow-deep), inset 0 1px 2px var(--shadow-deep), 0 1px 0 var(--shadow-highlight);
+  --shadow-pressed: inset 0 2px 5px var(--shadow-deep), 0 1px 0 var(--shadow-highlight);
+
+  --font-sans: var(--font-manrope), "Segoe UI", sans-serif;
+  --font-heading: var(--font-poppins), "Segoe UI", sans-serif;
+  --font-script: var(--font-pacifico), cursive;
 }
 
 @theme static {
@@ -190,22 +211,36 @@
 body {
   background-color: var(--surface);
   color: var(--text);
-  font-family: var(--font-sans), "Segoe UI", sans-serif;
+  font-family: var(--font-manrope), "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
+/* Page titles: script face with a gradient, like the Waylo lettering. */
+@utility text-title-gradient {
+  font-family: var(--font-pacifico), cursive;
+  font-weight: 400;
+  background-image: linear-gradient(100deg, var(--title-from), var(--title-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding: 0.12em 0.12em 0.18em;
+  margin-inline: -0.12em;
+  filter: drop-shadow(0 3px 6px var(--shadow-key));
+}
+
+/* Respects the theme crossfade and gives surfaces a slow, smooth color change. */
 ::view-transition-old(root) {
-  animation: theme-fade-out var(--duration-base) var(--ease-standard) both;
+  animation: theme-fade-out var(--duration-slow) var(--ease-standard) both;
 }
 
 ::view-transition-new(root) {
-  animation: theme-fade-in var(--duration-base) var(--ease-standard) both;
+  animation: theme-fade-in var(--duration-slow) var(--ease-standard) both;
 }
 
 /* Fallback when document.startViewTransition is missing. */
 html.theme-fade {
-  animation: theme-fade-soft var(--duration-base) var(--ease-standard);
+  animation: theme-fade-soft var(--duration-slow) var(--ease-standard);
 }
 
 @keyframes theme-fade-soft {

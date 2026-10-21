@@ -31,7 +31,7 @@ export function SelectField({
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <label htmlFor={id} className="text-body font-bold text-text">
+      <label htmlFor={id} className="font-heading text-base font-medium text-text">
         {label}
       </label>
       <div className="relative">

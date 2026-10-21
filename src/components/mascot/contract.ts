@@ -11,12 +11,14 @@
  *              inmediata..."). It is never an alarm by itself: no flashing, no shaking,
  *              no sound, no red takeover. The text is the message; the mascot only
  *              supports it.
+ * - error:     Something failed (network, server). A soft, sad pose: eyes lower and narrower,
+ *              one gentle tilt. No flashing, no loud shaking. The text explains the problem.
  * - success:   A step completed well (e.g. an orientation was delivered). The only
  *              state allowed to use --ease-emphasis. Must not appear alongside "alert".
  *
  * All states must respect prefers-reduced-motion (see src/design/motion.ts).
  */
-export type MascotState = "idle" | "listening" | "thinking" | "speaking" | "alert" | "success";
+export type MascotState = "idle" | "listening" | "thinking" | "speaking" | "alert" | "success" | "error";
 
 export interface MascotProps {
   state: MascotState;

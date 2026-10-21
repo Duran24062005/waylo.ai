@@ -1,22 +1,22 @@
 import type { ComponentProps } from "react";
+import { buttonPrimary } from "@/components/ui/buttons";
 import { cn } from "@/lib/utils";
-import { focusRing } from "./styles";
 
-export function SubmitButton({ className, children, ...props }: Omit<ComponentProps<"button">, "type">) {
+export function SubmitButton({
+  className,
+  children,
+  loading,
+  ...props
+}: Omit<ComponentProps<"button">, "type"> & { loading?: boolean }) {
   return (
     <button
       {...props}
       type="submit"
-      className={cn(
-        "inline-flex min-h-12 w-full items-center justify-center rounded-md bg-accent px-6",
-        "text-body font-bold text-accent-foreground shadow-soft",
-        "transition-[transform,opacity] duration-[var(--duration-fast)] ease-standard",
-        "hover:opacity-90 active:scale-[0.99]",
-        focusRing,
-        className,
-      )}
+      disabled={loading || props.disabled}
+      aria-busy={loading || undefined}
+      className={cn(buttonPrimary, "w-full", className)}
     >
-      {children}
+      {loading ? "Un momento…" : children}
     </button>
   );
 }

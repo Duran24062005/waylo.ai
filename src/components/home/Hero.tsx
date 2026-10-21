@@ -1,7 +1,7 @@
 "use client";
 
 import { HugeiconsIcon } from "@hugeicons/react";
-import { LogInIcon, MessageCircleIcon } from "@hugeicons/core-free-icons";
+import { MessageCircleIcon } from "@hugeicons/core-free-icons";
 import { MotionConfig, motion, type Variants } from "motion/react";
 import { Mascot } from "@/components/mascot";
 import { duration, easing } from "@/design/motion";
@@ -11,60 +11,66 @@ const ease = [...easing.standard] as [number, number, number, number];
 
 const container: Variants = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } },
+  show: { transition: { staggerChildren: 0.12, delayChildren: 0.08 } },
 };
 
 const part: Variants = {
-  hidden: { opacity: 0, y: 16 },
+  hidden: { opacity: 0, y: 24 },
   show: { opacity: 1, y: 0, transition: { duration: duration.slow, ease } },
 };
 
-export function Hero() {
+export function Hero({ loggedIn }: { loggedIn?: boolean }) {
   return (
     // "user" drops the y movement under prefers-reduced-motion and keeps the plain fade.
     <MotionConfig reducedMotion="user">
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 text-center"
-      >
-        <motion.div variants={part} className="relative">
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 -z-10 scale-125 rounded-full bg-accent/10 blur-3xl"
-          />
-          <Mascot state="idle" size={220} label="Mascota de Waylo" />
+      <div className="mx-auto grid w-full max-w-7xl items-center gap-12 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
+        <motion.div variants={container} initial="hidden" animate="show" className="flex flex-col items-start gap-7">
+          <motion.p
+            variants={part}
+            className="rounded-full bg-surface-raised px-5 py-2 font-heading text-base font-medium text-accent shadow-soft"
+          >
+            Sistema de salud · Orientación en lenguaje sencillo
+          </motion.p>
+
+          <motion.h1 variants={part} className="font-script text-6xl leading-[1.05] text-title-gradient sm:text-7xl xl:text-8xl">
+            Navegador del paciente
+          </motion.h1>
+
+          <motion.p variants={part} className="max-w-2xl text-body-lg text-text-muted sm:text-title">
+            Cuéntanos cómo te sientes y te decimos a qué nivel de atención acudir: Urgencias, Consulta Prioritaria o
+            Medicina General.
+          </motion.p>
+
+          <motion.p variants={part} className="rounded-md bg-surface px-5 py-3 text-body text-text shadow-inset">
+            Esto no es un diagnóstico ni una receta. Solo te orienta sobre dónde ir.
+          </motion.p>
+
+          <motion.div variants={part} className="flex w-full flex-col gap-4 pt-2 sm:w-auto sm:flex-row">
+            <CtaButton
+              href="/chat"
+              variant="primary"
+              icon={<HugeiconsIcon icon={MessageCircleIcon} aria-hidden="true" className="size-6" strokeWidth={2} />}
+            >
+              Orientarme ahora
+            </CtaButton>
+            {loggedIn ? null : (
+              <CtaButton href="/registro" variant="secondary">
+                Crear cuenta
+              </CtaButton>
+            )}
+          </motion.div>
         </motion.div>
-
-        <motion.h1 variants={part} className="text-headline font-bold text-text sm:text-display">
-          Navegador del paciente
-        </motion.h1>
-
-        <motion.p variants={part} className="text-body-lg text-text-muted">
-          Cuéntanos cómo te sientes y te decimos a qué nivel de atención acudir: Urgencias,
-          Consulta Prioritaria o Medicina General.
-        </motion.p>
-
-        <motion.p
-          variants={part}
-          className="rounded-md border border-border bg-surface-raised px-4 py-3 text-body text-text"
-        >
-          Esto no es un diagnóstico ni una receta. Solo te orienta sobre dónde ir.
-        </motion.p>
 
         <motion.div
-          variants={part}
-          className="flex w-full flex-col items-stretch gap-4 pt-2 sm:w-auto sm:flex-row"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: duration.slow, ease, delay: 0.2 }}
+          className="relative mx-auto flex w-full max-w-md items-center justify-center lg:max-w-none"
         >
-          <CtaButton href="/chat" variant="primary" icon={<HugeiconsIcon icon={MessageCircleIcon} aria-hidden="true" className="size-6" strokeWidth={2} />}>
-            Orientarme ahora
-          </CtaButton>
-          <CtaButton href="/login" variant="secondary" icon={<HugeiconsIcon icon={LogInIcon} aria-hidden="true" className="size-6" strokeWidth={2} />}>
-            Iniciar sesión
-          </CtaButton>
+          <div aria-hidden="true" className="absolute inset-6 rounded-full bg-accent/15 blur-3xl" />
+          <Mascot state="idle" size={380} label="Mascota de Waylo" className="relative h-auto w-full max-w-[22rem] lg:max-w-[28rem]" />
         </motion.div>
-      </motion.div>
+      </div>
     </MotionConfig>
   );
 }

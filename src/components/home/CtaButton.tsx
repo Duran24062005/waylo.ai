@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
+import { buttonPrimary, buttonSoft } from "@/components/ui/buttons";
 import { cn } from "@/lib/utils";
 import { duration, easing } from "@/design/motion";
 
@@ -11,8 +12,8 @@ const MotionLink = motion.create(Link);
 const ease = [...easing.standard] as [number, number, number, number];
 
 const variants = {
-  primary: "bg-accent text-accent-foreground shadow-soft hover:shadow-raised",
-  secondary: "border border-border-strong bg-surface-raised text-text hover:bg-surface",
+  primary: buttonPrimary,
+  secondary: buttonSoft,
 } as const;
 
 export interface CtaButtonProps {
@@ -27,15 +28,9 @@ export function CtaButton({ href, variant = "primary", icon, children, className
   return (
     <MotionLink
       href={href}
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.98, y: 0 }}
+      whileTap={{ scale: 0.97 }}
       transition={{ duration: duration.fast, ease }}
-      className={cn(
-        "inline-flex min-h-14 items-center justify-center gap-3 rounded-lg px-8 text-body-lg font-bold",
-        "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-        variants[variant],
-        className,
-      )}
+      className={cn("min-h-14 gap-3 px-8 text-body-lg", variants[variant], className)}
     >
       <span>{children}</span>
       {icon}

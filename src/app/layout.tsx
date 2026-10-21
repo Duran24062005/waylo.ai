@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
-import { Atkinson_Hyperlegible } from "next/font/google";
+import { Manrope, Pacifico, Poppins } from "next/font/google";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { THEME_INIT_SCRIPT } from "@/components/theme/theme-script";
 import "./globals.css";
 
-const sans = Atkinson_Hyperlegible({
-  weight: ["400", "700"],
+// Manrope: body and chat text. Poppins: labels, buttons and headings. Pacifico: page titles.
+const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
+const poppins = Poppins({
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-poppins",
+  display: "swap",
 });
+const pacifico = Pacifico({ weight: "400", subsets: ["latin"], variable: "--font-pacifico", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Navegador del paciente",
@@ -25,7 +29,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className={`${sans.variable} ${sans.className} antialiased`}>
+      <body className={`${manrope.variable} ${poppins.variable} ${pacifico.variable} antialiased`}>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
