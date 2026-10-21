@@ -39,7 +39,7 @@ const card = {
 export function Levels() {
   return (
     <MotionConfig reducedMotion="user">
-      <div className="mx-auto mt-16 flex w-full max-w-7xl flex-col gap-16 lg:mt-28">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-16">
         <section id="niveles" aria-labelledby="niveles-titulo" className="flex flex-col gap-8">
           <h2 id="niveles-titulo" className="font-heading text-headline font-semibold text-text">
             Tres niveles de atención

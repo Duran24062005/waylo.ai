@@ -57,7 +57,7 @@ export function ChatInput({ value, pending, onChange, onSubmit, onFocus, onBlur 
           placeholder="Cuéntame qué sientes…"
           autoComplete="off"
           enterKeyHint="send"
-          className="max-h-44 min-h-12 min-w-0 flex-1 resize-none rounded-lg bg-surface px-4 py-3 text-body text-text shadow-inset placeholder:text-text-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+          className="max-h-44 min-h-12 min-w-0 flex-1 resize-none rounded-lg bg-surface px-4 py-3 text-body text-text shadow-inset placeholder:text-text-muted field-focus"
         />
         <button
           type="submit"

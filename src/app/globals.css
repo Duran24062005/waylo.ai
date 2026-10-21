@@ -304,6 +304,24 @@ body {
   --lift: -6px;
 }
 
+/* Fields: instead of a hard outline, a soft two-layer halo that grows in, over the inset shadow. */
+@utility field-focus {
+  outline: none;
+  transition: box-shadow var(--duration-base) var(--ease-standard);
+
+  &:focus,
+  &:focus-visible {
+    box-shadow:
+      inset 0 3px 8px var(--shadow-deep),
+      inset 0 1px 2px var(--shadow-deep),
+      0 0 0 2px color-mix(in srgb, var(--focus-ring) 55%, transparent),
+      0 0 0 7px color-mix(in srgb, var(--focus-ring) 12%, transparent);
+  }
+}
+
+/* Short screens (laptops): tighten the access card. */
+@custom-variant short (@media (max-height: 900px));
+
 /* Text links: the underline sweeps in from the left and settles; a faint one stays for non-hover users. */
 @utility link-anim {
   position: relative;

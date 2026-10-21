@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = { title: "Política de privacidad | Waylo" };
+export const metadata: Metadata = { title: "Política de privacidad" };
 
 export default function PrivacidadPage() {
   return (

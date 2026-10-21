@@ -14,6 +14,7 @@ const DOT: Record<MascotState, string> = {
   alert: "bg-danger",
   success: "bg-success",
   error: "bg-danger",
+  private: "bg-text-muted",
 };
 
 export function StatusBadge({ state, className }: { state: MascotState; className?: string }) {

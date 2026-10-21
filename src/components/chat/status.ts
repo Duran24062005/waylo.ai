@@ -9,4 +9,5 @@ export const STATUS_COPY: Record<MascotState, string> = {
   alert: "Esto necesita atención inmediata",
   success: "Tu orientación está lista",
   error: "Algo salió mal",
+  private: "No estoy mirando",
 };
