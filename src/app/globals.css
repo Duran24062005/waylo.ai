@@ -202,15 +202,20 @@
 }
 
 html {
-  scroll-behavior: smooth;
   scroll-padding-top: 6rem;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
+/* Lenis: inertial smooth scroll (see SmoothScroll.tsx). */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
 
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+@media (prefers-reduced-motion: reduce) {
   :root {
     --duration-fast: 0ms;
     --duration-base: 0ms;

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope, Pacifico, Poppins } from "next/font/google";
+import { SmoothScroll } from "@/components/SmoothScroll";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { THEME_INIT_SCRIPT } from "@/components/theme/theme-script";
 import "./globals.css";
@@ -30,7 +31,10 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className={`${manrope.variable} ${poppins.variable} ${pacifico.variable} antialiased`}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <SmoothScroll />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
