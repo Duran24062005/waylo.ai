@@ -127,7 +127,7 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <ChatHeader mascotState={mascotState} eps={eps} onEpsChange={setEps} />
 
-          <div className="flex-1 overflow-y-auto">
+          <div data-lenis-prevent className="flex-1 overflow-y-auto">
             <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 sm:px-8">
               {started ? (
                 <MessageList

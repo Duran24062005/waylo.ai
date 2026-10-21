@@ -25,24 +25,13 @@ export function Hero({ loggedIn }: { loggedIn?: boolean }) {
     <MotionConfig reducedMotion="user">
       <div className="mx-auto grid w-full max-w-7xl items-center gap-12 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
         <motion.div variants={container} initial="hidden" animate="show" className="flex flex-col items-start gap-7">
-          <motion.p
-            variants={part}
-            className="rounded-full bg-surface-raised px-5 py-2 font-heading text-base font-medium text-accent shadow-soft"
-          >
-            Sistema de salud · Orientación en lenguaje sencillo
-          </motion.p>
-
           <motion.h1 variants={part} className="font-script text-6xl leading-[1.05] text-title-gradient sm:text-7xl xl:text-8xl">
             Navegador del paciente
           </motion.h1>
 
-          <motion.p variants={part} className="max-w-2xl text-body-lg text-text-muted sm:text-title">
+          <motion.p variants={part} className="max-w-2xl text-body text-text-muted sm:text-body-lg">
             Cuéntanos cómo te sientes y te decimos a qué nivel de atención acudir: Urgencias, Consulta Prioritaria o
             Medicina General.
-          </motion.p>
-
-          <motion.p variants={part} className="rounded-md bg-surface px-5 py-3 text-body text-text shadow-inset">
-            Esto no es un diagnóstico ni una receta. Solo te orienta sobre dónde ir.
           </motion.p>
 
           <motion.div variants={part} className="flex w-full flex-col gap-4 pt-2 sm:w-auto sm:flex-row">
