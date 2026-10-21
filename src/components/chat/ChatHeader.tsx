@@ -23,7 +23,7 @@ export function ChatHeader({ mascotState, eps, onEpsChange }: ChatHeaderProps) {
         >
           Waylo
         </Link>
-        <ThemeToggle showLabel={false} />
+        <ThemeToggle />
       </div>
       <div className="mt-2 flex items-center gap-3">
         <Mascot state={mascotState} size={56} className="shrink-0" />

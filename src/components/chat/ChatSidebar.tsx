@@ -30,7 +30,7 @@ export function ChatSidebar({ mascotState, eps, onEpsChange, onReset, nombre }: 
         >
           Waylo
         </Link>
-        <ThemeToggle showLabel={false} />
+        <ThemeToggle />
       </div>
 
       <div className="flex flex-col items-center gap-5 text-center">

@@ -18,6 +18,14 @@ export default async function InicioPage() {
     <div className="flex min-h-dvh flex-col bg-surface text-text">
       <header className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-8">
         <span className="font-script text-4xl text-title-gradient">Waylo</span>
+        <nav aria-label="Secciones" className="hidden items-center gap-8 font-heading text-body font-medium md:flex">
+          <a href="#niveles" className="link-anim rounded-sm">
+            Niveles
+          </a>
+          <a href="#como" className="link-anim rounded-sm">
+            Cómo funciona
+          </a>
+        </nav>
         <div className="flex flex-wrap items-center gap-4">
           <UserMenu nombre={session?.nombre} />
           <ThemeToggle />

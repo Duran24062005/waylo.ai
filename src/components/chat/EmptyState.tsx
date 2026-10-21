@@ -1,5 +1,7 @@
 "use client";
 
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { motion } from "motion/react";
 import { duration, easing } from "@/design/motion";
 
@@ -33,20 +35,28 @@ export function EmptyState({ nombre, suggestions, disabled, onSelect }: EmptySta
 
       <div role="group" aria-label="Empezar con un síntoma" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {suggestions.map((text, index) => (
-          <motion.button
+          <motion.div
             key={text}
-            type="button"
-            disabled={disabled}
-            onClick={() => onSelect(text)}
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: duration.slow, ease: easing.standard, delay: 0.12 + index * 0.08 }}
-            whileHover={{ y: -4 }}
-            whileTap={{ scale: 0.98 }}
-            className="min-h-24 rounded-lg bg-surface-raised p-5 text-left font-heading text-body-lg font-semibold text-text shadow-soft transition-shadow duration-[var(--duration-base)] ease-standard hover:shadow-raised active:shadow-pressed focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {text}
-          </motion.button>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => onSelect(text)}
+              className="lift w-full group flex min-h-24 items-end justify-between gap-3 rounded-lg bg-surface-raised p-5 text-left font-heading text-body-lg font-semibold text-text shadow-soft focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {text}
+              <HugeiconsIcon
+                icon={ArrowRight02Icon}
+                size={22}
+                strokeWidth={2.25}
+                aria-hidden
+                className="shrink-0 -translate-x-1 opacity-0 transition-[transform,opacity] duration-[var(--duration-base)] ease-standard group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100"
+              />
+            </button>
+          </motion.div>
         ))}
       </div>
     </div>

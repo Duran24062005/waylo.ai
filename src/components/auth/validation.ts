@@ -37,7 +37,6 @@ export function validateRegistro(values: {
   acepta: boolean;
 }): RegistroErrors {
   const errors: RegistroErrors = {};
-  if (values.nombre.trim().length < 2) errors.nombre = "Escribe tu nombre.";
   const email = values.email.trim();
   if (!email) errors.email = "Escribe tu correo.";
   else if (!EMAIL_PATTERN.test(email)) errors.email = "Revisa tu correo. Debe verse así: nombre@correo.com";

@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     const hash = await hashPassword(parsed.data.password);
     const rows = (await sql`
       insert into personas (nombre, email, password_hash, fecha_nacimiento, acepta_datos_en)
-      values (${parsed.data.nombre}, ${parsed.data.email}, ${hash}, ${nacimiento}, now())
+      values (${parsed.data.nombre || parsed.data.email.split("@")[0]}, ${parsed.data.email}, ${hash}, ${nacimiento}, now())
       returning id, nombre
     `) as { id: string; nombre: string }[];
     await startSession({ id: rows[0].id, nombre: rows[0].nombre });

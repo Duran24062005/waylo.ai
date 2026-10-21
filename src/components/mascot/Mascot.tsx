@@ -19,7 +19,7 @@ function useReducedMotion() {
 }
 
 // Character colors are fixed on purpose: the sphere must read on light and dark surfaces.
-const EYE_COLOR = "#0d0e12";
+const EYE_COLOR = "#0d0d0d";
 
 export function Mascot({ state, size = 120, className, label }: MascotProps) {
   const uid = useId().replace(/:/g, "");
@@ -141,9 +141,9 @@ export function Mascot({ state, size = 120, className, label }: MascotProps) {
       <defs>
         <radialGradient id={ids.body} cx="36%" cy="28%" r="78%">
           <stop offset="0" stopColor="#ffffff" />
-          <stop offset="0.38" stopColor="#f4f5f8" />
-          <stop offset="0.78" stopColor="#d3d7de" />
-          <stop offset="1" stopColor="#a9afbb" />
+          <stop offset="0.38" stopColor="#f4f4f4" />
+          <stop offset="0.78" stopColor="#d2d2d2" />
+          <stop offset="1" stopColor="#a6a6a6" />
         </radialGradient>
         <radialGradient id={ids.gloss} cx="50%" cy="50%" r="50%">
           <stop offset="0" stopColor="#ffffff" stopOpacity="0.95" />
@@ -154,8 +154,8 @@ export function Mascot({ state, size = 120, className, label }: MascotProps) {
           <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
         </radialGradient>
         <radialGradient id={ids.shadow} cx="50%" cy="50%" r="50%">
-          <stop offset="0" stopColor="#0b1020" stopOpacity="0.34" />
-          <stop offset="1" stopColor="#0b1020" stopOpacity="0" />
+          <stop offset="0" stopColor="#000000" stopOpacity="0.34" />
+          <stop offset="1" stopColor="#000000" stopOpacity="0" />
         </radialGradient>
       </defs>
 
