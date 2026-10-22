@@ -8,6 +8,6 @@
     </radialGradient>
   </defs>
   <circle cx="60" cy="60" r="56" fill="url(#b)"/>
-  <g transform="translate(46 58) rotate(-16)"><rect x="-6" y="-14" width="12" height="28" rx="6" fill="#0d0d0d"/></g>
-  <g transform="translate(74 58) rotate(-16)"><rect x="-6" y="-14" width="12" height="28" rx="6" fill="#0d0d0d"/></g>
+  <g transform="translate(46 58) rotate(-6)"><rect x="-7" y="-14" width="14" height="28" rx="7" fill="#0d0d0d"/></g>
+  <g transform="translate(74 58) rotate(-6)"><rect x="-7" y="-14" width="14" height="28" rx="7" fill="#0d0d0d"/></g>
 </svg>

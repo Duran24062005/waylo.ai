@@ -33,6 +33,14 @@ export function Mascot({ state, size = 120, className, label }: MascotProps) {
   const lookRef = useRef<SVGGElement>(null);
   const eyeLeftRef = useRef<SVGGElement>(null);
   const eyeRightRef = useRef<SVGGElement>(null);
+  const orbitLeftRef = useRef<SVGGElement>(null);
+  const orbitRightRef = useRef<SVGGElement>(null);
+  const openLeftRef = useRef<SVGGElement>(null);
+  const openRightRef = useRef<SVGGElement>(null);
+  const shutLeftRef = useRef<SVGPathElement>(null);
+  const shutRightRef = useRef<SVGPathElement>(null);
+  // Lives across state changes, so a new state turns from wherever the last one left the sphere.
+  const turnRef = useRef({ value: 0 });
 
   const followRef = useRef(false);
   const moveGazeRef = useRef<(x: number, y: number) => void>(() => {});
@@ -86,9 +94,23 @@ export function Mascot({ state, size = 120, className, label }: MascotProps) {
     const eyeLeft = eyeLeftRef.current;
     const eyeRight = eyeRightRef.current;
     const gaze = gazeRef.current;
+    const orbits = [orbitLeftRef.current, orbitRightRef.current];
+    const opens = [openLeftRef.current, openRightRef.current];
+    const shut = [shutLeftRef.current, shutRightRef.current];
     if (!body || !shadow || !lids || !look || !eyeLeft || !eyeRight || !gaze) return;
+    if (orbits.some((el) => !el) || opens.some((el) => !el) || shut.some((el) => !el)) return;
 
-    const targets: MascotTargets = { body, shadow, lids, look, eyes: [eyeLeft, eyeRight] };
+    const targets: MascotTargets = {
+      body,
+      shadow,
+      lids,
+      look,
+      eyes: [eyeLeft, eyeRight],
+      orbits: orbits as SVGGElement[],
+      opens: opens as SVGGElement[],
+      shut: shut as SVGPathElement[],
+      turn: turnRef.current,
+    };
 
     if (!mountedRef.current) initOrigins(targets);
 
@@ -176,16 +198,44 @@ export function Mascot({ state, size = 120, className, label }: MascotProps) {
         <g ref={gazeRef}>
           <g ref={lookRef}>
             <g ref={lidsRef}>
-              <g transform="translate(47 52) rotate(-16)">
-                <g ref={eyeLeftRef}>
-                  <rect x="-4.5" y="-11" width="9" height="22" rx="4.5" fill={EYE_COLOR} />
-                  <ellipse cx="-1.2" cy="-5.5" rx="1.1" ry="2.4" fill="#ffffff" opacity="0.22" />
+              <g ref={orbitLeftRef}>
+                <g transform="translate(47 52) rotate(-6)">
+                  <g ref={eyeLeftRef}>
+                    <g ref={openLeftRef}>
+                      <rect x="-5.5" y="-11" width="11" height="22" rx="5.5" fill={EYE_COLOR} />
+                      <ellipse cx="-1.6" cy="-5.5" rx="1.3" ry="2.6" fill="#ffffff" opacity="0.22" />
+                    </g>
+                    {/* Closed eye: a soft downward curve, level with the open eye's lower half. */}
+                    <path
+                      ref={shutLeftRef}
+                      d="M -6.5 2 Q 0 7 6.5 2"
+                      fill="none"
+                      stroke={EYE_COLOR}
+                      strokeWidth="3.4"
+                      strokeLinecap="round"
+                      opacity="0"
+                    />
+                  </g>
                 </g>
               </g>
-              <g transform="translate(73 52) rotate(-16)">
-                <g ref={eyeRightRef}>
-                  <rect x="-4.5" y="-11" width="9" height="22" rx="4.5" fill={EYE_COLOR} />
-                  <ellipse cx="-1.2" cy="-5.5" rx="1.1" ry="2.4" fill="#ffffff" opacity="0.22" />
+              <g ref={orbitRightRef}>
+                <g transform="translate(73 52) rotate(-6)">
+                  <g ref={eyeRightRef}>
+                    <g ref={openRightRef}>
+                      <rect x="-5.5" y="-11" width="11" height="22" rx="5.5" fill={EYE_COLOR} />
+                      <ellipse cx="-1.6" cy="-5.5" rx="1.3" ry="2.6" fill="#ffffff" opacity="0.22" />
+                    </g>
+                    {/* Closed eye: a soft downward curve, level with the open eye's lower half. */}
+                    <path
+                      ref={shutRightRef}
+                      d="M -6.5 2 Q 0 7 6.5 2"
+                      fill="none"
+                      stroke={EYE_COLOR}
+                      strokeWidth="3.4"
+                      strokeLinecap="round"
+                      opacity="0"
+                    />
+                  </g>
                 </g>
               </g>
             </g>

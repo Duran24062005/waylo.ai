@@ -2,24 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useId, useMemo, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { AnimatePresence, motion, type Variants } from "motion/react";
 import { LockPasswordIcon, Mail01Icon, UserIcon } from "@hugeicons/core-free-icons";
 import { buttonPrimary, buttonSoft } from "@/components/ui/buttons";
 import { duration, easing } from "@/design/motion";
-import {
-  birthYearOptions,
-  isValidBirthDate,
-  MONTHS_ES,
-  type BirthDateError,
-  type BirthDateInput,
-} from "@/lib/birthdate";
+import { isValidBirthDate, type BirthDateError, type BirthDateInput } from "@/lib/birthdate";
 import { cn } from "@/lib/utils";
 import { AuthShell } from "./AuthShell";
 import { FieldError } from "./FieldError";
 import { PasswordToggle } from "./PasswordToggle";
-import { SelectField, type SelectOption } from "./SelectField";
+import { BirthDatePicker } from "./BirthDatePicker";
 import { StrengthMeter } from "./StrengthMeter";
 import { TextField } from "./TextField";
 import { focusRing } from "./styles";
@@ -49,12 +43,6 @@ const BIRTH_ERROR: Record<BirthDateError, string> = {
   too_old: "Revisa el año. Debe ser de los últimos 120 años.",
 };
 
-const DAYS: SelectOption[] = Array.from({ length: 31 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }));
-const MONTHS: SelectOption[] = MONTHS_ES.map((name, i) => ({
-  value: String(i + 1),
-  label: name.charAt(0).toUpperCase() + name.slice(1),
-}));
-const toNumber = (value: string) => (value === "" ? null : Number(value));
 
 const ease = [...easing.standard] as [number, number, number, number];
 
@@ -92,16 +80,12 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const [today] = useState(() => new Date());
-  const years = useMemo<SelectOption[]>(
-    () => birthYearOptions(today).map((y) => ({ value: String(y), label: String(y) })),
-    [today],
-  );
 
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [parts, setParts] = useState({ day: "", month: "", year: "" });
+  const [birthDate, setBirthDate] = useState<Date | undefined>(undefined);
   const [acepta, setAcepta] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; acepta?: string }>({});
@@ -113,13 +97,12 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
 
   const isRegistro = mode === "registro";
   const input: BirthDateInput = {
-    day: toNumber(parts.day),
-    month: toNumber(parts.month),
-    year: toNumber(parts.year),
+    day: birthDate ? birthDate.getDate() : null,
+    month: birthDate ? birthDate.getMonth() + 1 : null,
+    year: birthDate ? birthDate.getFullYear() : null,
   };
   const birth = isValidBirthDate(input, today);
-  const allChosen = Boolean(parts.day && parts.month && parts.year);
-  const birthError = isRegistro && !birth.valid && (submitted || allChosen) ? BIRTH_ERROR[birth.error] : null;
+  const birthError = isRegistro && !birth.valid && (submitted || Boolean(birthDate)) ? BIRTH_ERROR[birth.error] : null;
 
   function switchMode(next: AuthMode) {
     if (next === mode) return;
@@ -243,10 +226,12 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: duration.base, ease }}
-              className="flex flex-col gap-1"
+              className="flex flex-col gap-1.5"
             >
-              <h1 className="font-script text-[clamp(2rem,4.8vh,3rem)] leading-tight text-title-gradient">{copy.title}</h1>
-              <p className="text-[clamp(0.95rem,2vh,1.125rem)] text-text-muted">{copy.intro}</p>
+              <h1 className="font-heading text-[clamp(1.75rem,3.8vh,2.25rem)] font-semibold leading-tight tracking-[-0.02em] text-text">
+                {copy.title}
+              </h1>
+              <p className="text-base text-text-muted">{copy.intro}</p>
             </motion.div>
           </AnimatePresence>
         </div>
@@ -308,61 +293,35 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
                 )}
                 {...passwordFocusHandlers}
               />
+              <AnimatePresence initial={false}>
+                {isRegistro && passwordFocused ? (
+                  <Reveal id="strength">
+                    <StrengthMeter password={password} />
+                  </Reveal>
+                ) : null}
+              </AnimatePresence>
             </div>
 
             <AnimatePresence initial={false}>
               {isRegistro ? (
                 <Reveal id="extras">
                   <div className="flex flex-col gap-5 short:gap-3">
-                    <StrengthMeter password={password} />
-
-                    <fieldset className="flex flex-col gap-2">
-                      <legend className="mb-2 font-heading text-base font-medium text-text">Fecha de nacimiento</legend>
-                      <div className="grid grid-cols-[1fr_1.6fr_1.2fr] gap-3">
-                        <SelectField
-                          label="Día"
-                          name="bday-day"
-                          autoComplete="bday-day"
-                          placeholder="Día"
-                          options={DAYS}
-                          value={parts.day}
-                          onChange={(e) => setParts((p) => ({ ...p, day: e.target.value }))}
-                          invalid={Boolean(birthError)}
-                          describedBy={birthError ? dateErrorId : undefined}
-                          {...focusHandlers}
-                        />
-                        <SelectField
-                          label="Mes"
-                          name="bday-month"
-                          autoComplete="bday-month"
-                          placeholder="Mes"
-                          options={MONTHS}
-                          value={parts.month}
-                          onChange={(e) => setParts((p) => ({ ...p, month: e.target.value }))}
-                          invalid={Boolean(birthError)}
-                          describedBy={birthError ? dateErrorId : undefined}
-                          {...focusHandlers}
-                        />
-                        <SelectField
-                          label="Año"
-                          name="bday-year"
-                          autoComplete="bday-year"
-                          placeholder="Año"
-                          options={years}
-                          value={parts.year}
-                          onChange={(e) => setParts((p) => ({ ...p, year: e.target.value }))}
-                          invalid={Boolean(birthError)}
-                          describedBy={birthError ? dateErrorId : undefined}
-                          {...focusHandlers}
-                        />
-                      </div>
+                    <div className="flex flex-col gap-2">
+                      <BirthDatePicker
+                        value={birthDate}
+                        onChange={setBirthDate}
+                        today={today}
+                        invalid={Boolean(birthError)}
+                        describedBy={birthError ? dateErrorId : undefined}
+                        onOpenChange={setFocused}
+                      />
                       <div aria-live="polite" className="empty:hidden">
                         {birthError ? <FieldError id={dateErrorId}>{birthError}</FieldError> : null}
                       </div>
-                    </fieldset>
+                    </div>
 
                     <div className="flex flex-col gap-2">
-                      <label className="flex cursor-pointer items-start gap-3 text-[clamp(0.95rem,2vh,1.125rem)] leading-snug text-text">
+                      <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-text-muted">
                         <input
                           type="checkbox"
                           name="acepta"
@@ -373,7 +332,7 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
                           }}
                           aria-invalid={errors.acepta ? true : undefined}
                           aria-describedby={errors.acepta ? consentErrorId : undefined}
-                          className={`mt-0.5 size-6 shrink-0 cursor-pointer accent-[var(--accent)] ${focusRing}`}
+                          className={`mt-px size-5 shrink-0 cursor-pointer accent-[var(--accent)] ${focusRing}`}
                         />
                         <span>Autorizo que Waylo guarde mis datos para crear mi cuenta. Solo se usan para eso.</span>
                       </label>

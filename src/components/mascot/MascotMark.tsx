@@ -14,11 +14,11 @@ export function MascotMark({ size = 32, className }: { size?: number; className?
         </radialGradient>
       </defs>
       <circle cx="60" cy="60" r="52" fill={`url(#${id}-b)`} />
-      <g transform="translate(47 56) rotate(-16)">
-        <rect x="-4.5" y="-11" width="9" height="22" rx="4.5" fill="#0d0d0d" />
+      <g transform="translate(47 56) rotate(-6)">
+        <rect x="-5.5" y="-11" width="11" height="22" rx="5.5" fill="#0d0d0d" />
       </g>
-      <g transform="translate(73 56) rotate(-16)">
-        <rect x="-4.5" y="-11" width="9" height="22" rx="4.5" fill="#0d0d0d" />
+      <g transform="translate(73 56) rotate(-6)">
+        <rect x="-5.5" y="-11" width="11" height="22" rx="5.5" fill="#0d0d0d" />
       </g>
     </svg>
   );
