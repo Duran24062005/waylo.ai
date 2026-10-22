@@ -26,7 +26,7 @@ const WELCOME: ChatMessage = {
 
 const FAILURE_TEXT = "No pude completar la orientación. Si te sientes mal, busca atención médica.";
 const SPEAKING_MS = 2400;
-const MIN_THINKING_MS = 5000;
+const MIN_THINKING_MS = 2500;
 
 function wait(ms: number) {
   return new Promise<void>((resolve) => window.setTimeout(resolve, ms));

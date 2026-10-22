@@ -19,6 +19,14 @@ const enter = {
   transition: { duration: duration.base, ease: easing.standard },
 };
 
+// Replies take the place of the thinking indicator, so they only fade in and never move.
+const fade = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+  transition: { duration: duration.fast, ease: easing.standard },
+};
+
 interface MessageListProps {
   messages: ChatMessage[];
   pending: boolean;
@@ -50,9 +58,9 @@ function AssistantText({ message, animate, isAlert, isError, isLastError, pendin
     <div className="flex min-w-0 flex-col items-start gap-2">
       <p
         className={cn(
-          "min-w-0 break-words text-body-lg text-text",
-          // Centers the first line (30px) on the 36px mascot.
-          !isAlert && !isError && "mt-[3px]",
+          "min-w-0 break-words text-base text-text",
+          // Centers the first line (24px) on the 36px mascot.
+          !isAlert && !isError && "mt-1.5",
           isAlert && "rounded-lg bg-danger px-5 py-4 font-semibold text-danger-foreground shadow-raised",
           isError && "rounded-lg bg-surface-raised px-5 py-4 shadow-soft",
         )}
@@ -115,7 +123,7 @@ export function MessageList({
           }
 
           return (
-            <motion.div key={message.id} {...enter} className="group flex items-start gap-4 pr-4 sm:pr-24">
+            <motion.div key={message.id} {...fade} className="group flex items-start gap-4 pr-4 sm:pr-24">
               {isAlert ? (
                 <Mascot state="alert" size={44} className="shrink-0" />
               ) : isError ? (
@@ -137,7 +145,7 @@ export function MessageList({
           );
         })}
         {pending && (
-          <motion.div key="typing" {...enter}>
+          <motion.div key="typing" {...enter} exit={undefined}>
             <ThinkingLoader />
           </motion.div>
         )}

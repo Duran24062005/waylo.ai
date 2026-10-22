@@ -15,7 +15,7 @@ export function ThinkingLoader() {
       <MascotMark size={36} className="shrink-0" />
       <motion.span
         role="status"
-        className="bg-[linear-gradient(90deg,var(--text-muted)_0%,var(--text-muted)_35%,var(--text)_50%,var(--text-muted)_65%,var(--text-muted)_100%)] bg-[length:250%_100%] bg-clip-text font-heading text-body-lg text-transparent"
+        className="bg-[linear-gradient(90deg,var(--text-muted)_0%,var(--text-muted)_35%,var(--text)_50%,var(--text-muted)_65%,var(--text-muted)_100%)] bg-[length:250%_100%] bg-clip-text text-base text-transparent"
         style={reduced ? { backgroundPosition: "50% 50%" } : undefined}
         animate={reduced ? undefined : { backgroundPosition: SWEEP }}
         transition={{ duration: 2.2, ease: "linear", repeat: Infinity }}
