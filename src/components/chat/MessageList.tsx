@@ -151,7 +151,7 @@ export function MessageList({
         )}
       </AnimatePresence>
       {card && (
-        <motion.div {...enter} exit={undefined} className="sm:pl-14">
+        <motion.div {...enter} exit={undefined} className="pl-13 pr-4 sm:pr-24">
           <OrientationCard card={card} />
         </motion.div>
       )}

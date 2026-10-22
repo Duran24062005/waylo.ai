@@ -13,7 +13,11 @@ const LEVEL_LABEL: Record<CareLevel, string> = {
 };
 
 const DEFAULT_BASE_URL = "https://api.reto.pltk.mx/v1";
-const DEFAULT_MODEL = "grok-4.6";
+// Non-reasoning: answers in about 1-2 s. grok-4.6 reasons first and takes 12-18 s per turn.
+const DEFAULT_MODEL = "grok-4.20-0309-non-reasoning";
+
+// From this many patient replies on, the model must orient instead of asking again.
+const MAX_QUESTION_TURNS = 5;
 
 const DEFAULT_CHECKLIST = [
   "Documento de identidad",
@@ -131,16 +135,18 @@ export async function runTriage(input: TriageInput): Promise<TriageResponse> {
 
   // The reto gateway speaks the OpenAI protocol, so the OpenAI provider talks to it directly.
   const reto = createOpenAI({ apiKey, baseURL: process.env.RETO_BASE_URL || DEFAULT_BASE_URL });
-  const transcript = input.messages
-    .map((message) => `${message.role === "user" ? "Paciente" : "Navegador"}: ${message.content}`)
-    .join("\n");
 
   try {
     const result = await generateText({
       model: reto.chat(process.env.RETO_MODEL || DEFAULT_MODEL),
       temperature: 0.1,
-      system: SYSTEM_PROMPT,
-      prompt: `EPS mencionada: ${input.eps || "no indicada"}\n\nConversación:\n${transcript}`,
+      system: `${SYSTEM_PROMPT}\n\nEPS mencionada: ${input.eps || "no indicada"}${
+        userTurns(input.messages) >= MAX_QUESTION_TURNS
+          ? "\n\nYa hiciste suficientes preguntas. Responde ahora con listo:true y la orientación, con lo que el paciente dijo."
+          : ""
+      }`,
+      // Real roles, so each patient reply is read as the answer to the assistant's previous question.
+      messages: input.messages.map(({ role, content }) => ({ role, content })),
     });
 
     const parsed = parseModelJson(result.text);

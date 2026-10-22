@@ -36,12 +36,14 @@ export function ChatInput({ value, pending, onChange, onSubmit, onFocus, onBlur 
   }
 
   return (
-    <form onSubmit={onSubmit} method="post" className="group relative">
+    <form onSubmit={onSubmit} method="post">
       <div
-        aria-hidden
-        className="pointer-events-none absolute -inset-2 rounded-xl bg-linear-to-r from-accent via-success to-accent opacity-0 blur-xl transition-opacity duration-[var(--duration-slow)] ease-standard group-focus-within:opacity-30"
-      />
-      <div className="relative flex items-end gap-3 rounded-xl bg-surface-raised p-3 shadow-raised transition-transform duration-[var(--duration-base)] ease-standard group-focus-within:-translate-y-0.5">
+        className={cn(
+          "flex items-end gap-2 rounded-3xl bg-surface-raised py-2 pl-5 pr-2 shadow-soft ring-1 ring-text/10",
+          "transition-[box-shadow] duration-[var(--duration-base)] ease-standard",
+          "focus-within:shadow-raised focus-within:ring-2 focus-within:ring-accent/50",
+        )}
+      >
         <label className="sr-only" htmlFor="mensaje">
           Escribe cómo te sientes
         </label>
@@ -57,20 +59,20 @@ export function ChatInput({ value, pending, onChange, onSubmit, onFocus, onBlur 
           placeholder="Cuéntame qué sientes…"
           autoComplete="off"
           enterKeyHint="send"
-          className="max-h-44 min-h-12 min-w-0 flex-1 resize-none rounded-lg bg-surface px-4 py-3 text-body text-text shadow-inset placeholder:text-text-muted field-focus"
+          className="max-h-44 min-h-10 min-w-0 flex-1 resize-none bg-transparent py-2 text-base text-text outline-none placeholder:text-text-muted"
         />
         <button
           type="submit"
           disabled={!canSend}
           aria-label="Enviar mensaje"
           className={cn(
-            "inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground shadow-solid",
+            "inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground",
             "lift lift-sm transition-opacity",
             "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-            "disabled:cursor-not-allowed disabled:opacity-40",
+            "disabled:cursor-not-allowed disabled:opacity-30",
           )}
         >
-          <HugeiconsIcon icon={ArrowUp02Icon} size={22} strokeWidth={2.5} aria-hidden />
+          <HugeiconsIcon icon={ArrowUp02Icon} size={20} strokeWidth={2.5} aria-hidden />
         </button>
       </div>
     </form>
