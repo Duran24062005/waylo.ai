@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { MotionConfig, motion } from "motion/react";
 import {
   ChatHeader,
@@ -26,6 +26,11 @@ const WELCOME: ChatMessage = {
 
 const FAILURE_TEXT = "No pude completar la orientación. Si te sientes mal, busca atención médica.";
 const SPEAKING_MS = 2400;
+const MIN_THINKING_MS = 5000;
+
+function wait(ms: number) {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+}
 
 export function ChatApp({ nombre }: { nombre?: string | null }) {
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
@@ -37,6 +42,8 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
   const [errorIds, setErrorIds] = useState<string[]>([]);
   const [focused, setFocused] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  // Bumped on reset so a request still waiting for its minimum time can't write into the new chat.
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     if (!speaking) return;
@@ -45,34 +52,46 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
   }, [speaking]);
 
   async function request(history: ChatMessage[]) {
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
     setPending(true);
     setResult(null);
+    const startedAt = Date.now();
 
-    try {
-      const response = await fetch("/api/triage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          eps,
-          messages: history
-            .filter((message) => message.id !== "welcome" && !errorIds.includes(message.id))
-            .map(({ role, content: textContent }) => ({ role, content: textContent })),
-        }),
-      });
+    const call = fetch("/api/triage", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        eps,
+        messages: history
+          .filter((message) => message.id !== "welcome" && !errorIds.includes(message.id))
+          .map(({ role, content: textContent }) => ({ role, content: textContent })),
+      }),
+    }).then((response) => {
       if (!response.ok) throw new Error("triage failed");
-      const data = (await response.json()) as TriageResponse;
+      return response.json() as Promise<TriageResponse>;
+    });
+
+    // The reply, or the failure text, only shows once the minimum thinking time has passed.
+    const [outcome] = await Promise.allSettled([
+      call,
+      wait(Math.max(0, MIN_THINKING_MS - (Date.now() - startedAt))),
+    ]);
+    if (requestId !== requestIdRef.current) return;
+
+    if (outcome.status === "fulfilled") {
+      const data = outcome.value;
       const replyId = crypto.randomUUID();
       setResult(data);
       setMessages((current) => [...current, { id: replyId, role: "assistant", content: data.message }]);
       if (data.kind === "red_flag") setAlertIds((current) => [...current, replyId]);
       setSpeaking(true);
-    } catch {
+    } else {
       const failureId = crypto.randomUUID();
       setMessages((current) => [...current, { id: failureId, role: "assistant", content: FAILURE_TEXT }]);
       setErrorIds((current) => [...current, failureId]);
-    } finally {
-      setPending(false);
     }
+    setPending(false);
   }
 
   function send(text: string) {
@@ -94,9 +113,24 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
     void request(history);
   }
 
+  function regenerate(assistantId: string) {
+    if (pending) return;
+    const index = messages.findIndex((message) => message.id === assistantId);
+    if (index === -1 || assistantId === "welcome") return;
+    // Everything before the reply, so the user message it answered is sent again.
+    const history = messages.slice(0, index);
+    setMessages(history);
+    setAlertIds((current) => current.filter((id) => id !== assistantId));
+    setErrorIds((current) => current.filter((id) => id !== assistantId));
+    setResult(null);
+    void request(history);
+  }
+
   function reset() {
+    requestIdRef.current += 1;
     setMessages([WELCOME]);
     setDraft("");
+    setPending(false);
     setResult(null);
     setAlertIds([]);
     setErrorIds([]);
@@ -141,6 +175,7 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
                     alertMessageIds={alertIds}
                     errorMessageIds={errorIds}
                     onRetry={retry}
+                    onRegenerate={regenerate}
                   />
                 </div>
               </div>
