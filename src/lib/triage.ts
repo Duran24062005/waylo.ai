@@ -124,9 +124,11 @@ function parseModelJson(text: string): z.infer<typeof llmSchema> | null {
 export async function runTriage(input: TriageInput): Promise<TriageResponse> {
   const latest = lastUserText(input.messages);
 
-  if (detectRedFlag(latest).matched || input.messages.some((message) => message.role === "user" && detectRedFlag(message.content).matched)) {
+  // Only the newest message triggers the fixed alert. Later replies go to the model, which knows about the alarm.
+  if (detectRedFlag(latest).matched) {
     return { kind: "red_flag", message: RED_FLAG_MESSAGE };
   }
+  const priorAlarm = input.messages.some((message) => message.role === "user" && detectRedFlag(message.content).matched);
 
   const apiKey = process.env.RETO_KEY;
   if (!apiKey) {
@@ -143,6 +145,10 @@ export async function runTriage(input: TriageInput): Promise<TriageResponse> {
       system: `${SYSTEM_PROMPT}\n\nEPS mencionada: ${input.eps || "no indicada"}${
         userTurns(input.messages) >= MAX_QUESTION_TURNS
           ? "\n\nYa hiciste suficientes preguntas. Responde ahora con listo:true y la orientación, con lo que el paciente dijo."
+          : ""
+      }${
+        priorAlarm
+          ? "\n\nEl paciente ya reportó una señal de alarma vital. Responde con listo:true, nivel urgencias y una justificación breve que lo invite a acudir de inmediato."
           : ""
       }`,
       // Real roles, so each patient reply is read as the answer to the assistant's previous question.

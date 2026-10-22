@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import type { OrientationCard as Card } from "@/lib/types";
 
 const BADGE: Record<Card["nivel"], string> = {
-  urgencias: "bg-danger text-danger-foreground",
+  urgencias: "bg-[#c62828] text-white",
   prioritaria: "bg-warning text-warning-foreground",
   general: "bg-success text-success-foreground",
 };
@@ -17,7 +17,7 @@ export function OrientationCard({ card }: { card: Card }) {
       className={cn(
         "w-full max-w-xl rounded-2xl bg-surface-raised p-5 text-left shadow-soft",
         // Urgencias keeps a danger outline: this is a safety cue, not decoration.
-        urgent && "ring-2 ring-danger",
+        urgent && "ring-2 ring-[#c62828]",
       )}
       aria-label="Orientación"
     >

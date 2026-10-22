@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { MascotState } from "@/components/mascot";
 import { duration, easing } from "@/design/motion";
@@ -29,19 +29,19 @@ const CHROME_PX = 52;
 export function StatusBadge({ state, className }: { state: MascotState; className?: string }) {
   const reduced = useReducedMotion();
   const label = STATUS_COPY[state];
-  const labelRef = useRef<HTMLSpanElement>(null);
+  // One stable, invisible copy of the current label. Measuring it avoids the animated copies,
+  // which overlap while a roll is in progress. It also catches web fonts that load late.
+  const sizerRef = useRef<HTMLSpanElement>(null);
   const [width, setWidth] = useState<number>();
 
-  const measure = () => {
-    const el = labelRef.current;
-    if (el) setWidth(el.getBoundingClientRect().width + CHROME_PX);
-  };
-
-  useLayoutEffect(measure, [label]);
-
-  // The first measurement can use a fallback font, so measure again once fonts load.
-  useEffect(() => {
-    void document.fonts?.ready.then(measure);
+  useLayoutEffect(() => {
+    const el = sizerRef.current;
+    if (!el) return;
+    const measure = () => setWidth(el.offsetWidth + CHROME_PX);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -57,10 +57,12 @@ export function StatusBadge({ state, className }: { state: MascotState; classNam
     >
       <span aria-hidden className={cn("size-2.5 shrink-0 rounded-full", DOT[state])} />
       <span className="relative grid overflow-hidden">
+        <span ref={sizerRef} aria-hidden className="invisible col-start-1 row-start-1 w-max">
+          {label}
+        </span>
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
             key={label}
-            ref={labelRef}
             initial={reduced ? { opacity: 0 } : { y: "100%" }}
             animate={reduced ? { opacity: 1 } : { y: "0%" }}
             exit={reduced ? { opacity: 0 } : { y: "-100%" }}

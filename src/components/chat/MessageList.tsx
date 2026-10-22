@@ -61,7 +61,8 @@ function AssistantText({ message, animate, isAlert, isError, isLastError, pendin
           "min-w-0 break-words text-base text-text",
           // Centers the first line (24px) on the 36px mascot.
           !isAlert && !isError && "mt-1.5",
-          isAlert && "rounded-lg bg-danger px-5 py-4 font-semibold text-danger-foreground shadow-raised",
+          // The palette is monochrome, so the safety alert gets its own red in both themes.
+          isAlert && "rounded-lg bg-[#c62828] px-5 py-4 font-semibold text-white shadow-raised",
           isError && "rounded-lg bg-surface-raised px-5 py-4 shadow-soft",
         )}
       >
