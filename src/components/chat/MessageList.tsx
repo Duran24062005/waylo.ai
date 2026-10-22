@@ -55,7 +55,7 @@ export function MessageList({
           if (isUser) {
             return (
               <motion.div key={message.id} {...enter} className="flex justify-end pl-10 sm:pl-24">
-                <p className="max-w-full min-w-0 break-words rounded-xl rounded-br-sm bg-accent px-5 py-3 text-body text-accent-foreground shadow-soft">
+                <p className="max-w-full min-w-0 break-words rounded-xl rounded-br-sm bg-accent px-5 py-3 text-body text-accent-foreground shadow-solid">
                   {message.content}
                 </p>
               </motion.div>
