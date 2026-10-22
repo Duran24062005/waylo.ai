@@ -25,7 +25,7 @@ export function StrengthMeter({ password }: { password: string }) {
       <div className="flex items-center gap-3">
         <div className="flex flex-1 gap-2" aria-hidden>
           {[0, 1, 2, 3].map((bar) => (
-            <span key={bar} className="h-2 flex-1 overflow-hidden rounded-full bg-surface-raised shadow-soft">
+            <span key={bar} className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-raised shadow-soft">
               <motion.span
                 className="block h-full origin-left rounded-full bg-accent"
                 initial={false}
@@ -35,13 +35,13 @@ export function StrengthMeter({ password }: { password: string }) {
             </span>
           ))}
         </div>
-        <span className="min-w-20 text-right font-heading text-caption font-medium text-text-muted">
+        <span className="min-w-20 text-right font-heading text-xs font-medium text-text-muted">
           {password ? LEVEL[score] : "Sin escribir"}
         </span>
       </div>
       <ul className="grid grid-cols-2 gap-x-3 gap-y-1.5">
         {results.map((r) => (
-          <li key={r.id} className={cn("flex items-center gap-2 text-caption", r.ok ? "text-text" : "text-text-muted")}>
+          <li key={r.id} className={cn("flex items-center gap-2 text-sm", r.ok ? "text-text" : "text-text-muted")}>
             <span
               aria-hidden
               className={cn(

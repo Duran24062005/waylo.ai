@@ -16,6 +16,8 @@ export interface SelectFieldProps extends Omit<ComponentProps<"select">, "id" | 
   /** Id of an element that describes this select, usually a shared error message. */
   describedBy?: string;
   invalid?: boolean;
+  /** Keep the label for screen readers only, when a group legend already names the field. */
+  hideLabel?: boolean;
 }
 
 export function SelectField({
@@ -24,6 +26,7 @@ export function SelectField({
   options,
   describedBy,
   invalid,
+  hideLabel,
   ref,
   ...selectProps
 }: SelectFieldProps) {
@@ -31,7 +34,7 @@ export function SelectField({
 
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <label htmlFor={id} className="font-heading text-base font-medium text-text">
+      <label htmlFor={id} className={hideLabel ? "sr-only" : "font-heading text-sm font-medium text-text"}>
         {label}
       </label>
       <div className="relative">

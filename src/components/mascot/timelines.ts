@@ -2,6 +2,7 @@ import gsap from "gsap";
 import { CustomEase } from "gsap/CustomEase";
 import { duration, gsapEasePath } from "@/design/motion";
 import type { MascotState } from "./contract";
+import { EYE_X, EYE_Y, orbitEye } from "./orbit";
 import { BLINKS, POSES, type Pose } from "./states";
 
 export interface MascotTargets {
@@ -13,6 +14,14 @@ export interface MascotTargets {
   look: SVGGElement;
   /** Each eye, for state shapes such as wider or narrower. */
   eyes: SVGGElement[];
+  /** Each eye's place on the turning sphere (left, right). */
+  orbits: SVGGElement[];
+  /** The open eye shapes, which squash away when the eyes close. */
+  opens: SVGGElement[];
+  /** The closed-eye strokes, shown when the eyes shut. */
+  shut: SVGElement[];
+  /** Current turn in degrees. GSAP tweens it and the eyes follow. */
+  turn: { value: number };
 }
 
 const STANDARD = "waylo-standard";
@@ -32,7 +41,20 @@ function ensureEases() {
 export function initOrigins(t: MascotTargets) {
   gsap.set(t.body, { svgOrigin: "60 58" });
   gsap.set(t.shadow, { svgOrigin: "60 108" });
-  gsap.set([t.lids, t.look, ...t.eyes], { transformOrigin: "50% 50%" });
+  gsap.set([t.lids, t.look, ...t.eyes, ...t.opens, ...t.shut], { transformOrigin: "50% 50%" });
+  t.orbits.forEach((orbit, i) => gsap.set(orbit, { svgOrigin: `${EYE_X[i]} ${EYE_Y}` }));
+}
+
+function placeEyes(t: MascotTargets) {
+  t.orbits.forEach((orbit, i) => {
+    const { x, scaleX, opacity } = orbitEye(EYE_X[i], t.turn.value);
+    gsap.set(orbit, { x, scaleX, opacity });
+  });
+}
+
+function setClosed(t: MascotTargets, closed: number) {
+  gsap.set(t.opens, { scaleY: 1 - 0.88 * closed, opacity: 1 - closed });
+  gsap.set(t.shut, { scaleX: 0.6 + 0.4 * closed, opacity: closed });
 }
 
 /** Sets every animated value of the character to a state's resting pose, with no motion. */
@@ -43,6 +65,9 @@ export function applyPose(t: MascotTargets, state: MascotState) {
   gsap.set(t.lids, { scaleY: 1 });
   gsap.set(t.look, { x: pose.lookX });
   gsap.set(t.eyes, { scaleX: pose.eyeScaleX, scaleY: pose.eyeScaleY });
+  t.turn.value = pose.turn;
+  placeEyes(t);
+  setClosed(t, pose.closed);
 }
 
 function settleTo(tl: gsap.core.Timeline, t: MascotTargets, pose: Pose, seconds: number) {
@@ -52,6 +77,25 @@ function settleTo(tl: gsap.core.Timeline, t: MascotTargets, pose: Pose, seconds:
     .to(t.lids, { scaleY: 1, duration: seconds, ease }, 0)
     .to(t.look, { x: pose.lookX, duration: seconds, ease }, 0)
     .to(t.eyes, { scaleX: pose.eyeScaleX, scaleY: pose.eyeScaleY, duration: seconds, ease }, 0);
+
+  // Turning away: rotate first, then close the eyes. Turning back: open them first, then rotate.
+  const turnTo = (at: number, length: number) =>
+    tl.to(t.turn, { value: pose.turn, duration: length, ease, onUpdate: () => placeEyes(t) }, at);
+  const shutTo = (at: number, length: number) =>
+    tl
+      .to(t.opens, { scaleY: 1 - 0.88 * pose.closed, opacity: 1 - pose.closed, duration: length, ease }, at)
+      .to(t.shut, { scaleX: 0.6 + 0.4 * pose.closed, opacity: pose.closed, duration: length, ease }, at);
+
+  if (seconds === 0) {
+    turnTo(0, 0);
+    shutTo(0, 0);
+  } else if (pose.closed > 0) {
+    turnTo(0, 0.8);
+    shutTo(0.4, 0.22);
+  } else {
+    shutTo(0, 0.26);
+    turnTo(0.12, 0.75);
+  }
 }
 
 function startBlinking(t: MascotTargets): () => void {

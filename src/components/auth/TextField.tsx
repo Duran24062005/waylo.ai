@@ -22,7 +22,7 @@ export function TextField({ label, error, trailing, leading, id, ref, ...inputPr
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={inputId} className="font-heading text-base font-medium text-text">
+      <label htmlFor={inputId} className="font-heading text-sm font-medium text-text">
         {label}
       </label>
       <div className="relative">

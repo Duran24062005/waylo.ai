@@ -350,6 +350,33 @@ body {
   }
 }
 
+/* Floating panels (date picker): grow from their trigger, fade out a little faster. */
+.popover-motion {
+  transform-origin: var(--radix-popover-content-transform-origin, var(--radix-select-content-transform-origin));
+}
+
+.popover-motion[data-state="open"] {
+  animation: popover-in var(--duration-base) var(--ease-standard);
+}
+
+.popover-motion[data-state="closed"] {
+  animation: popover-out var(--duration-fast) var(--ease-standard);
+}
+
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+}
+
+@keyframes popover-out {
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
 /* Theme crossfade: both snapshots fade together, slowly and with a soft in-out curve. */
 ::view-transition-old(root) {
   animation: theme-fade-out var(--duration-theme) var(--ease-gentle) both;
