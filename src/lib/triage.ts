@@ -12,6 +12,9 @@ const LEVEL_LABEL: Record<CareLevel, string> = {
   general: "Medicina General",
 };
 
+const DEFAULT_BASE_URL = "https://api.reto.pltk.mx/v1";
+const DEFAULT_MODEL = "grok-4.6";
+
 const DEFAULT_CHECKLIST = [
   "Documento de identidad",
   "Carné o app de afiliación",
@@ -121,29 +124,30 @@ export async function runTriage(input: TriageInput): Promise<TriageResponse> {
     return { kind: "red_flag", message: RED_FLAG_MESSAGE };
   }
 
-  const apiKey = process.env.RETO_KEY || process.env.OPENAI_API_KEY;
+  const apiKey = process.env.RETO_KEY;
   if (!apiKey) {
     return fallbackTriage(input.messages, input.eps);
   }
 
-  const reto = createOpenAI({
-    apiKey,
-    baseURL: process.env.RETO_BASE_URL || "https://api.reto.pltk.mx/v1",
-  });
+  // The reto gateway speaks the OpenAI protocol, so the OpenAI provider talks to it directly.
+  const reto = createOpenAI({ apiKey, baseURL: process.env.RETO_BASE_URL || DEFAULT_BASE_URL });
   const transcript = input.messages
     .map((message) => `${message.role === "user" ? "Paciente" : "Navegador"}: ${message.content}`)
     .join("\n");
 
   try {
     const result = await generateText({
-      model: reto(process.env.RETO_MODEL || "grok-4.6"),
+      model: reto.chat(process.env.RETO_MODEL || DEFAULT_MODEL),
       temperature: 0.1,
       system: SYSTEM_PROMPT,
       prompt: `EPS mencionada: ${input.eps || "no indicada"}\n\nConversación:\n${transcript}`,
     });
 
     const parsed = parseModelJson(result.text);
-    if (!parsed) return fallbackTriage(input.messages, input.eps);
+    if (!parsed) {
+      console.error("[triage] model reply was not valid JSON, using fallback");
+      return fallbackTriage(input.messages, input.eps);
+    }
 
     if (!parsed.listo) {
       return {
@@ -164,7 +168,13 @@ export async function runTriage(input: TriageInput): Promise<TriageResponse> {
         input.eps,
       ),
     };
-  } catch {
+  } catch (error) {
+    const { statusCode, responseBody } = (error ?? {}) as { statusCode?: number; responseBody?: string };
+    console.error(
+      "[triage] model request failed, using fallback:",
+      statusCode ?? "sin estado",
+      responseBody ?? (error instanceof Error ? error.message : error),
+    );
     return fallbackTriage(input.messages, input.eps);
   }
 }
