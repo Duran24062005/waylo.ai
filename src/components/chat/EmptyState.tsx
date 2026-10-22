@@ -26,11 +26,7 @@ export function EmptyState({ nombre, suggestions, disabled, onSelect }: EmptySta
         <h1 className="font-script text-5xl leading-tight text-title-gradient sm:text-6xl">
           {first ? `Hola, ${first}` : "Hola"}
         </h1>
-        <p className="font-heading text-title font-medium text-text sm:text-headline">¿Cómo te sientes hoy?</p>
-        <p className="max-w-2xl text-body-lg text-text-muted">
-          Cuéntame qué sientes y te digo a qué nivel de atención acudir. No doy diagnósticos ni recetas. Si te falta el
-          aire, duele el pecho o te sientes muy mal, ve ya a Urgencias.
-        </p>
+        <p className="font-heading text-body-lg font-medium text-text sm:text-title">¿Cómo te sientes hoy?</p>
       </motion.div>
 
       <div role="group" aria-label="Empezar con un síntoma" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -45,12 +41,12 @@ export function EmptyState({ nombre, suggestions, disabled, onSelect }: EmptySta
               type="button"
               disabled={disabled}
               onClick={() => onSelect(text)}
-              className="lift w-full group flex min-h-24 items-end justify-between gap-3 rounded-lg bg-surface-raised p-5 text-left font-heading text-body-lg font-semibold text-text shadow-soft focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-60"
+              className="lift w-full group flex min-h-14 items-center justify-between gap-3 rounded-lg bg-surface-raised px-4 py-3 text-left font-heading text-base font-semibold text-text shadow-soft focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-60"
             >
               {text}
               <HugeiconsIcon
                 icon={ArrowRight02Icon}
-                size={22}
+                size={18}
                 strokeWidth={2.25}
                 aria-hidden
                 className="shrink-0 -translate-x-1 opacity-0 transition-[transform,opacity] duration-[var(--duration-base)] ease-standard group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100"

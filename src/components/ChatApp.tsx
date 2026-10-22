@@ -155,7 +155,7 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
               />
-              <p className="text-center text-caption text-text-muted">
+              <p className="text-center text-sm text-text-muted">
                 Waylo orienta, no diagnostica ni receta. Si te sientes muy mal, ve a Urgencias.
               </p>
             </div>

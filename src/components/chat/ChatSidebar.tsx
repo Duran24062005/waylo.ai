@@ -45,12 +45,7 @@ export function ChatSidebar({ mascotState, eps, onEpsChange, onReset, nombre }: 
 
       <EpsField value={eps} onChange={onEpsChange} />
 
-      <div className="mt-auto flex flex-col gap-4">
-        <p className="text-caption text-text-muted">
-          Te orientamos con palabras sencillas. No es un diagnóstico ni una receta.
-        </p>
-        <UserMenu nombre={nombre} />
-      </div>
+      <UserMenu nombre={nombre} className="mt-auto" />
     </aside>
   );
 }
