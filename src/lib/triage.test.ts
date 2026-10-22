@@ -33,15 +33,11 @@ describe("runTriage", () => {
   });
 
   it("uses the model's own message for a normal turn", async () => {
-    reply({ mensaje: "Siento que te duela. ¿Desde cuándo lo tienes?", listo: false, opciones: ["Hoy", "Hace días"] });
+    reply({ mensaje: "Siento que te duela. ¿Desde cuándo lo tienes?", listo: false });
 
     const result = await runTriage({ messages: [user("Me duele la cabeza")] });
 
-    expect(result).toEqual({
-      kind: "question",
-      message: "Siento que te duela. ¿Desde cuándo lo tienes?",
-      quickReplies: ["Hoy", "Hace días"],
-    });
+    expect(result).toEqual({ kind: "question", message: "Siento que te duela. ¿Desde cuándo lo tienes?" });
   });
 
   it("sends the conversation with real roles, not as flattened text", async () => {
@@ -86,12 +82,13 @@ describe("runTriage", () => {
     expect(result).toEqual({ kind: "question", message: "Entiendo, cuéntame un poco más sobre cómo empezó." });
   });
 
-  it("limits quick replies to four and drops empty ones", async () => {
-    reply({ mensaje: "¿Cómo es el dolor?", listo: false, opciones: ["a", "", "b", "c", "d", "e"] });
+  it("offers no suggested replies, even if the model sends some", async () => {
+    reply({ mensaje: "¿Cómo es el dolor?", listo: false, opciones: ["a", "b"] });
 
     const result = await runTriage({ messages: [user("Me duele el estómago")] });
 
-    expect(result.quickReplies).toEqual(["a", "b", "c", "d"]);
+    expect(result).toEqual({ kind: "question", message: "¿Cómo es el dolor?" });
+    expect(result).not.toHaveProperty("quickReplies");
   });
 
   it("fails instead of inventing a scripted answer when the model errors", async () => {
@@ -158,11 +155,7 @@ describe("runTriage", () => {
     });
 
     expect(generateText.mock.calls[1][0].system).toContain("Ya entregaste una orientación");
-    expect(result).toEqual({
-      kind: "question",
-      message: "Te lo digo porque tus síntomas son leves y van mejorando.",
-      quickReplies: undefined,
-    });
+    expect(result).toEqual({ kind: "question", message: "Te lo digo porque tus síntomas son leves y van mejorando." });
   });
 
   it("forces an orientation after five patient replies without one", async () => {

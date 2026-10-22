@@ -15,12 +15,14 @@
  *              one gentle tilt. No flashing, no loud shaking. The text explains the problem.
  * - private:   The person is typing a password. The mascot turns away to the left and closes
  *              its eyes, and does not follow the pointer. It returns to normal when the field loses focus.
+ * - muted:     The voice mode's microphone is off. The eyes shut and it keeps facing the person,
+ *              breathing slowly. Unlike "private" it does not turn away: it is resting, not looking elsewhere.
  * - success:   A step completed well (e.g. an orientation was delivered). The only
  *              state allowed to use --ease-emphasis. Must not appear alongside "alert".
  *
  * All states must respect prefers-reduced-motion (see src/design/motion.ts).
  */
-export type MascotState = "idle" | "listening" | "thinking" | "speaking" | "alert" | "success" | "error" | "private";
+export type MascotState = "idle" | "listening" | "thinking" | "speaking" | "alert" | "success" | "error" | "private" | "muted";
 
 export interface MascotProps {
   state: MascotState;

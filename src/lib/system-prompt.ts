@@ -21,8 +21,7 @@ Cómo conversar:
 
 Formato: responde SOLO con un JSON válido, sin texto fuera del JSON.
 Para conversar o preguntar:
-{"mensaje":"lo que verá el paciente","listo":false,"opciones":["respuesta corta 1","respuesta corta 2"]}
-"opciones" son de 2 a 4 respuestas cortas sugeridas; omítelas si no aplican.
+{"mensaje":"lo que verá el paciente","listo":false}
 Cuando ya puedas orientar:
 {"mensaje":"explicación cálida de la orientación en 2 o 3 frases, sin diagnosticar","listo":true,"nivel":"urgencias"|"prioritaria"|"general","justificacion":"frase corta sin diagnóstico","queLlevar":["Documento de identidad","..."]}`;
 

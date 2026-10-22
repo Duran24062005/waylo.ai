@@ -35,7 +35,6 @@ const llmSchema = z.object({
   nivel: z.enum(["urgencias", "prioritaria", "general"]).optional(),
   justificacion: z.string().optional(),
   queLlevar: z.array(z.string()).optional(),
-  opciones: z.array(z.string()).optional(),
 });
 
 export interface TriageInput {
@@ -184,9 +183,5 @@ export async function runTriage(input: TriageInput): Promise<TriageResponse> {
 
   if (!message) throw new TriageUnavailableError("model reply had no message");
 
-  return {
-    kind: "question",
-    message,
-    quickReplies: parsed.opciones?.filter((option) => option.trim()).slice(0, 4),
-  };
+  return { kind: "question", message };
 }

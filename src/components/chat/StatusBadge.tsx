@@ -16,6 +16,7 @@ const DOT: Record<MascotState, string> = {
   success: "bg-success",
   error: "bg-danger",
   private: "bg-text-muted",
+  muted: "bg-text-muted",
 };
 
 // Dot (10px), the gap after it (10px), and the pill's side padding (16px each).

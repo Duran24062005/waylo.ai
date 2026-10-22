@@ -8,7 +8,6 @@ import {
   ChatSidebar,
   EmptyState,
   MessageList,
-  QuickReplies,
 } from "@/components/chat";
 import { LiveControls, LiveStage, MASCOT_STATE, useLiveVoice } from "@/components/live";
 import type { MascotState } from "@/components/mascot";
@@ -168,7 +167,8 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
   const lastMessage = messages[messages.length - 1];
   const failed = errorIds.includes(lastMessage.id);
   const started = messages.length > 1;
-  const replies = result?.quickReplies ?? [];
+  // The composer sits in the middle while the chat is empty, and also during the voice mode, which shows only the mascot.
+  const centered = !started || liveActive;
 
   // The alert state is not used here: it only sits next to the fixed red-flag text, in MessageList.
   let mascotState: MascotState = "idle";
@@ -194,16 +194,15 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <ChatHeader mascotState={mascotState} eps={eps} onEpsChange={setEps} />
 
-          {/* Empty: the greeting sits right above the composer. Started: the conversation scrolls here. */}
+          {/* Voice mode: only the mascot, as at the start. Empty: the greeting. Started: the conversation scrolls here. */}
           <div className="flex min-h-0 flex-1 flex-col">
-            {started ? (
+            {liveActive ? (
+              <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-end px-4 pb-6 sm:px-8">
+                <LiveStage phase={live.phase} levelRef={live.levelRef} notice={failed ? FAILURE_TEXT : live.notice} />
+              </div>
+            ) : started ? (
               <div data-lenis-prevent className="flex-1 overflow-y-auto">
                 <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 sm:px-8">
-                  {liveActive && (
-                    <div className="sticky top-0 z-10 -mx-4 bg-surface/85 px-4 backdrop-blur-md sm:-mx-8 sm:px-8">
-                      <LiveStage phase={live.phase} levelRef={live.levelRef} notice={live.notice} compact />
-                    </div>
-                  )}
                   <MessageList
                     messages={messages.filter((message) => message.id !== "welcome")}
                     pending={pending}
@@ -216,18 +215,13 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
               </div>
             ) : (
               <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-end px-4 pb-6 sm:px-8">
-                {liveActive ? (
-                  <LiveStage phase={live.phase} levelRef={live.levelRef} notice={live.notice} />
-                ) : (
-                  <EmptyState nombre={nombre} />
-                )}
+                <EmptyState nombre={nombre} />
               </div>
             )}
           </div>
 
-          {/* Glides from the middle of the screen to the bottom on the first message. */}
+          {/* Glides between the middle of the screen and the bottom as the layout changes. */}
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 pt-2 sm:px-8">
-            <QuickReplies replies={replies} disabled={pending} onSelect={send} />
             {live.error && !liveActive && (
               <p role="alert" className="text-center text-sm text-text-muted">
                 {live.error}
@@ -235,7 +229,7 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
             )}
             <motion.div
               layout="position"
-              layoutDependency={started}
+              layoutDependency={centered}
               transition={{ duration: duration.slow, ease: easing.standard }}
               className="flex items-end"
             >
@@ -263,7 +257,7 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
           </div>
 
           {/* Empty spacer that mirrors the upper area, so the composer stays centered while the chat is empty. */}
-          {!started && <div aria-hidden className="min-h-0 flex-1" />}
+          {centered && <div aria-hidden className="min-h-0 flex-1" />}
 
           <p className="mx-auto mt-4 w-full max-w-5xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-center text-sm text-text-muted sm:px-8">
             Waylo orienta, no diagnostica ni receta. Si te sientes muy mal, ve a Urgencias.

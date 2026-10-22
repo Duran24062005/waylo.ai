@@ -175,6 +175,12 @@ export function playState(t: MascotTargets, state: MascotState, instant: boolean
         .to(t.body, { rotation: pose.bodyRotation, duration: 0.8, ease: STANDARD });
       break;
 
+    case "muted":
+      // Eyes shut, breathing slowly: resting, not gone.
+      tl.to(t.body, { scale: 1.015, duration: 3, ease: "sine.inOut", yoyo: true, repeat: -1 }, settle);
+      tl.to(t.shadow, { scaleX: 1.02, duration: 3, ease: "sine.inOut", yoyo: true, repeat: -1 }, settle);
+      break;
+
     case "success":
       tl.to(t.body, { scaleX: 1.04, scaleY: 0.94, duration: 0.1, ease: "power1.out" }, settle)
         .to(t.body, { y: -14, scaleX: 0.98, scaleY: 1.04, duration: 0.22, ease: "power2.out" })

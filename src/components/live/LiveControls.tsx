@@ -6,9 +6,9 @@ import { Cancel01Icon, Mic01Icon, MicOff01Icon } from "@hugeicons/core-free-icon
 import { duration, easing } from "@/design/motion";
 import { cn } from "@/lib/utils";
 
-// Same square, same depth as the rest of the composer: raised at rest, lifted on hover.
+// A 1x1 circle with the same depth as the rest of the composer: raised at rest, lifted on hover.
 const square = cn(
-  "relative inline-flex size-14 shrink-0 items-center justify-center rounded-2xl",
+  "relative inline-flex size-14 shrink-0 items-center justify-center rounded-full",
   "lift lift-sm transition-[box-shadow,background-color,color] duration-[var(--duration-base)] ease-standard",
   "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
   "disabled:cursor-not-allowed disabled:opacity-40",
@@ -48,13 +48,15 @@ export function LiveControls({ supported, active, muted, onStart, onStop, onTogg
         {active && (
           <motion.div
             key="mute"
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 68, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
+            initial={{ width: 0, opacity: 0, scale: 0.5 }}
+            animate={{ width: 68, opacity: 1, scale: 1 }}
+            exit={{ width: 0, opacity: 0, scale: 0.5 }}
             transition={{ duration: duration.base, ease: easing.standard }}
-            className="overflow-hidden"
+            // No clipping: the button lifts and casts a shadow on hover, and a clipped box cut both off.
+            // It grows from the right edge, so while it opens it fades in over the input, not over the X.
+            className="flex justify-end"
           >
-            <div className="pr-3">
+            <div className="shrink-0 pr-3">
               <button
                 type="button"
                 onClick={onToggleMute}

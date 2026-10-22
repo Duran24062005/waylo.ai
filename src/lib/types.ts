@@ -37,5 +37,4 @@ export interface TriageResponse {
   kind: "red_flag" | "question" | "orientation";
   message: string;
   card?: OrientationCard;
-  quickReplies?: string[];
 }

@@ -10,4 +10,5 @@ export const STATUS_COPY: Record<MascotState, string> = {
   success: "Tu orientación está lista",
   error: "Algo salió mal",
   private: "No estoy mirando",
+  muted: "Micrófono silenciado",
 };
