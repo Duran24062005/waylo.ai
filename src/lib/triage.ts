@@ -157,7 +157,12 @@ export async function runTriage(input: TriageInput): Promise<TriageResponse> {
 
     const parsed = parseModelJson(result.text);
     if (!parsed) {
-      console.error("[triage] model reply was not valid JSON, using fallback");
+      const plain = result.text.trim();
+      console.error("[triage] model reply was not valid JSON:", plain.slice(0, 120));
+      // A plain-text reply is still the model's own question, so keep it instead of the scripted fallback.
+      if (plain && !plain.includes("{") && plain.length <= 300) {
+        return { kind: "question", message: plain };
+      }
       return fallbackTriage(input.messages, input.eps);
     }
 

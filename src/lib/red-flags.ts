@@ -20,7 +20,7 @@ const RULES: RedFlagRule[] = [
   {
     id: "respiracion",
     pattern:
-      /\b(no puedo respirar|no puedo respirar bien|me ahogo|me estoy ahogando|asfixia|asfixi[aá]ndome|falta de aire|me falta el aire|dificultad para respirar|dificultad respiratoria|no me entra el aire|no me llega el aire|sensaci[oó]n de ahogo|jadeo grave|respiraci[oó]n muy dif[ií]cil|apenas puedo respirar|se me corta la respiraci[oó]n)\b/,
+      /\b(no puedo respirar|no puedo respirar bien|me ahogo|me estoy ahogando|asfixia|asfixi[aá]ndome|falta de aire|me falta el aire|dificultad(?:es)? para respirar|dificultad(?:es)? respiratoria(?:s)?|no me entra el aire|no me llega el aire|sensaci[oó]n de ahogo|jadeo grave|respiraci[oó]n muy dif[ií]cil|apenas puedo respirar|se me corta la respiraci[oó]n)\b/,
   },
   {
     id: "paralisis",

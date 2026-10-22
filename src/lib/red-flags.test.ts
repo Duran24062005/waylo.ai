@@ -24,6 +24,7 @@ const URGENT_CASES = [
   "Me aprieta el pecho y sudo frío",
   "No me entra el aire desde hace unos minutos",
   "Voy a suicidarme esta noche",
+  "Tengo dificultades para respirar",
 ];
 
 const NON_URGENT_CASES = [
