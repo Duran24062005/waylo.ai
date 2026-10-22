@@ -113,7 +113,7 @@ export function Calendar({ className, classNames, ...props }: DayPickerProps) {
           "hover:bg-surface active:scale-95",
           "focus-visible:outline-3 focus-visible:outline-offset-1 focus-visible:outline-focus-ring",
         ),
-        selected: "[&>button]:bg-accent [&>button]:font-semibold [&>button]:text-accent-foreground [&>button]:shadow-soft [&>button]:hover:bg-accent",
+        selected: "[&>button]:bg-accent [&>button]:font-semibold [&>button]:text-accent-foreground [&>button]:shadow-solid [&>button]:hover:bg-accent",
         today: "[&>button]:font-bold [&>button]:underline [&>button]:underline-offset-4",
         outside: "[&>button]:text-text-muted [&>button]:opacity-50",
         disabled: "[&>button]:pointer-events-none [&>button]:opacity-30",

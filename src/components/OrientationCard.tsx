@@ -26,7 +26,7 @@ export function OrientationCard({ card }: { card: Card }) {
       </p>
       <p
         className={cn(
-          "mt-3 inline-flex rounded-full px-5 py-2 font-heading text-body-lg font-semibold shadow-soft",
+          "mt-3 inline-flex rounded-full px-5 py-2 font-heading text-body-lg font-semibold shadow-solid",
           BADGE[card.nivel],
         )}
       >

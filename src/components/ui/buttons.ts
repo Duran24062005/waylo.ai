@@ -9,7 +9,7 @@ const base = cn(
 );
 
 /** Raised button on the accent color. */
-export const buttonPrimary = cn(base, "bg-accent text-accent-foreground shadow-soft");
+export const buttonPrimary = cn(base, "bg-accent text-accent-foreground shadow-solid");
 
 /** Raised button on a surface color. */
 export const buttonSoft = cn(base, "bg-surface-raised text-text shadow-soft");

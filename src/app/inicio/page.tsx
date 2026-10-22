@@ -3,6 +3,7 @@ import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { Hero } from "@/components/home/Hero";
+import { HeroDecor } from "@/components/home/HeroDecor";
 import { Levels } from "@/components/home/Levels";
 import { SocialDock } from "@/components/home/SocialDock";
 import { ThemeToggle } from "@/components/theme";
@@ -20,17 +21,19 @@ const column = "mx-auto w-full max-w-7xl px-4 sm:px-8";
 
 export default async function InicioPage() {
   const session = await getSession();
+  const chatHref = session ? "/chat" : "/login";
 
   return (
     <div className="bg-surface text-text">
-      <section className="flex min-h-dvh flex-col lg:h-dvh">
-        <header className={cn(column, "flex shrink-0 items-center justify-between gap-4 py-5")}>
+      <section className="relative isolate flex min-h-dvh flex-col lg:h-dvh">
+        <HeroDecor />
+        <header className={cn(column, "relative z-10 flex shrink-0 items-center justify-between gap-4 py-5")}>
           {/* The script W's ink starts right of its box; this margin (beyond the utility's own) lines it up with the column. */}
           <span className="font-script text-4xl text-title-gradient" style={{ marginLeft: "-0.31em" }}>
             Waylo
           </span>
           <div className="flex items-center gap-3">
-            <Link href={session ? "/chat" : "/login"} className={cn(buttonPrimary, "group h-12 gap-2 px-5 text-base")}>
+            <Link href={chatHref} className={cn(buttonPrimary, "group h-12 gap-2 px-5 text-base")}>
               Ir al Chat
               <HugeiconsIcon
                 icon={ArrowRight02Icon}
@@ -44,8 +47,8 @@ export default async function InicioPage() {
           </div>
         </header>
 
-        <main className={cn(column, "flex min-h-0 flex-1 items-center pb-8")}>
-          <Hero />
+        <main className={cn(column, "relative z-10 flex min-h-0 flex-1 items-center pb-8")}>
+          <Hero chatHref={chatHref} />
         </main>
       </section>
 
