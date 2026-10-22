@@ -39,9 +39,10 @@ export function ChatInput({ value, pending, onChange, onSubmit, onFocus, onBlur 
     <form onSubmit={onSubmit} method="post">
       <div
         className={cn(
-          "flex items-end gap-2 rounded-3xl bg-surface-raised py-2 pl-5 pr-2 shadow-soft ring-1 ring-text/10",
+          // No borders: the state is told by depth. Resting is raised, hover lifts it, focus sinks it like a field.
+          "flex items-end gap-2 rounded-3xl bg-surface-raised py-2 pl-5 pr-2 shadow-soft",
           "transition-[box-shadow] duration-[var(--duration-base)] ease-standard",
-          "focus-within:shadow-raised focus-within:ring-2 focus-within:ring-accent/50",
+          "hover:shadow-raised focus-within:shadow-inset focus-within:hover:shadow-inset",
         )}
       >
         <label className="sr-only" htmlFor="mensaje">
