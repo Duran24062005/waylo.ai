@@ -13,6 +13,7 @@ import {
 } from "@/components/chat";
 import type { MascotState } from "@/components/mascot";
 import { duration, easing } from "@/design/motion";
+import { orientationNote } from "@/lib/orientation-note";
 import type { ChatMessage, TriageResponse } from "@/lib/types";
 
 const STARTERS = ["Dolor de cabeza", "Fiebre", "Dolor abdominal", "Golpe o caída"];
@@ -65,7 +66,11 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
         eps,
         messages: history
           .filter((message) => message.id !== "welcome" && !errorIds.includes(message.id))
-          .map(({ role, content: textContent }) => ({ role, content: textContent })),
+          // The model never sees the card, so it gets a note about the orientation it already gave.
+          .map(({ role, content: textContent, card }) => ({
+            role,
+            content: card ? `${textContent}\n${orientationNote(card)}` : textContent,
+          })),
       }),
     }).then((response) => {
       if (!response.ok) throw new Error("triage failed");
@@ -83,7 +88,7 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
       const data = outcome.value;
       const replyId = crypto.randomUUID();
       setResult(data);
-      setMessages((current) => [...current, { id: replyId, role: "assistant", content: data.message }]);
+      setMessages((current) => [...current, { id: replyId, role: "assistant", content: data.message, card: data.card }]);
       if (data.kind === "red_flag") setAlertIds((current) => [...current, replyId]);
       setSpeaking(true);
     } else {
@@ -171,7 +176,6 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
                   <MessageList
                     messages={messages.filter((message) => message.id !== "welcome")}
                     pending={pending}
-                    card={result?.card}
                     alertMessageIds={alertIds}
                     errorMessageIds={errorIds}
                     onRetry={retry}

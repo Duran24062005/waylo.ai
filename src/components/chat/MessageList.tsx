@@ -7,7 +7,7 @@ import { OrientationCard } from "@/components/OrientationCard";
 import { buttonSoft } from "@/components/ui/buttons";
 import { duration, easing, prefersReducedMotion } from "@/design/motion";
 import { cn } from "@/lib/utils";
-import type { ChatMessage, OrientationCard as Card } from "@/lib/types";
+import type { ChatMessage } from "@/lib/types";
 import { MessageActions } from "./MessageActions";
 import { ThinkingLoader } from "./ThinkingLoader";
 import { TypewriterText } from "./TypewriterText";
@@ -30,7 +30,6 @@ const fade = {
 interface MessageListProps {
   messages: ChatMessage[];
   pending: boolean;
-  card?: Card;
   /** Ids of red-flag replies. The alert mascot sits next to their fixed text and nowhere else. */
   alertMessageIds?: readonly string[];
   /** Ids of replies that are a failure notice, and the retry action for the last one. */
@@ -53,6 +52,13 @@ interface AssistantTextProps {
 
 function AssistantText({ message, animate, isAlert, isError, isLastError, pending, onRetry, onRegenerate }: AssistantTextProps) {
   const [done, setDone] = useState(!animate);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const showCard = Boolean(message.card) && done;
+
+  // The card appears once the text has been typed, so bring it into view then.
+  useEffect(() => {
+    if (showCard) cardRef.current?.scrollIntoView({ block: "nearest", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+  }, [showCard]);
 
   return (
     <div className="flex min-w-0 flex-col items-start gap-2">
@@ -68,6 +74,17 @@ function AssistantText({ message, animate, isAlert, isError, isLastError, pendin
       >
         {animate ? <TypewriterText text={message.content} onDone={() => setDone(true)} /> : message.content}
       </p>
+      {message.card && done && (
+        <motion.div
+          ref={cardRef}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: duration.base, ease: easing.standard }}
+          className="mt-2 w-full"
+        >
+          <OrientationCard card={message.card} />
+        </motion.div>
+      )}
       {isError ? (
         isLastError && onRetry && !pending ? (
           <button type="button" onClick={onRetry} className={cn(buttonSoft, "mt-2 min-h-11 px-5 text-base")}>
@@ -88,7 +105,6 @@ function AssistantText({ message, animate, isAlert, isError, isLastError, pendin
 export function MessageList({
   messages,
   pending,
-  card,
   alertMessageIds = [],
   errorMessageIds = [],
   onRetry,
@@ -100,7 +116,7 @@ export function MessageList({
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end", behavior: prefersReducedMotion() ? "auto" : "smooth" });
-  }, [messages.length, pending, card]);
+  }, [messages.length, pending]);
 
   const lastErrorId = errorMessageIds[errorMessageIds.length - 1];
 
@@ -151,11 +167,6 @@ export function MessageList({
           </motion.div>
         )}
       </AnimatePresence>
-      {card && (
-        <motion.div {...enter} exit={undefined} className="pl-13 pr-4 sm:pr-24">
-          <OrientationCard card={card} />
-        </motion.div>
-      )}
       <div ref={endRef} aria-hidden className="scroll-mb-8" />
     </section>
   );

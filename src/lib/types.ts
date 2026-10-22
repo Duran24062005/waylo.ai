@@ -20,6 +20,8 @@ export interface ChatMessage {
   id: string;
   role: ChatRole;
   content: string;
+  /** Orientation attached to this reply, shown right under its text. */
+  card?: OrientationCard;
 }
 
 export interface OrientationCard {
