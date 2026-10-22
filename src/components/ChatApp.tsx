@@ -9,14 +9,12 @@ import {
   EmptyState,
   MessageList,
   QuickReplies,
-  Starters,
 } from "@/components/chat";
+import { LiveControls, LiveStage, MASCOT_STATE, useLiveVoice } from "@/components/live";
 import type { MascotState } from "@/components/mascot";
 import { duration, easing } from "@/design/motion";
 import { orientationNote } from "@/lib/orientation-note";
 import type { ChatMessage, TriageResponse } from "@/lib/types";
-
-const STARTERS = ["Dolor de cabeza", "Fiebre", "Dolor abdominal", "Golpe o caída"];
 
 const WELCOME: ChatMessage = {
   id: "welcome",
@@ -45,6 +43,25 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
   const [speaking, setSpeaking] = useState(false);
   // Bumped on reset so a request still waiting for its minimum time can't write into the new chat.
   const requestIdRef = useRef(0);
+
+  // What the patient says is sent exactly like typed text, so both get the same kind of answer.
+  const live = useLiveVoice({ onUtterance: send, busy: pending });
+  const { active: liveActive, speak: speakReply, silence: silenceVoice } = live;
+  const spokenId = useRef("welcome");
+
+  // Turning the voice on must not read the earlier conversation aloud.
+  useEffect(() => {
+    if (liveActive) spokenId.current = messages[messages.length - 1].id;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the mode is switched
+  }, [liveActive]);
+
+  // New replies are read aloud while the voice mode is on. Failure notices are not.
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (!liveActive || last.role !== "assistant" || last.id === spokenId.current) return;
+    spokenId.current = last.id;
+    if (!errorIds.includes(last.id)) speakReply(last.content);
+  }, [liveActive, messages, errorIds, speakReply]);
 
   useEffect(() => {
     if (!speaking) return;
@@ -140,6 +157,7 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
     setAlertIds([]);
     setErrorIds([]);
     setSpeaking(false);
+    silenceVoice();
   }
 
   function onSubmit(event: FormEvent) {
@@ -159,11 +177,19 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
   else if (speaking) mascotState = "speaking";
   else if (focused) mascotState = "listening";
   else if (result?.kind === "orientation" && result.card && result.card.nivel !== "urgencias") mascotState = "success";
+  if (liveActive) mascotState = MASCOT_STATE[live.phase];
 
   return (
     <MotionConfig reducedMotion="user">
       <div className="flex h-dvh bg-surface text-text">
-        <ChatSidebar mascotState={mascotState} eps={eps} onEpsChange={setEps} onReset={reset} nombre={nombre} />
+        <ChatSidebar
+          mascotState={mascotState}
+          eps={eps}
+          onEpsChange={setEps}
+          onReset={reset}
+          nombre={nombre}
+          hideMascot={liveActive}
+        />
 
         <div className="flex min-w-0 flex-1 flex-col">
           <ChatHeader mascotState={mascotState} eps={eps} onEpsChange={setEps} />
@@ -173,6 +199,11 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
             {started ? (
               <div data-lenis-prevent className="flex-1 overflow-y-auto">
                 <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 sm:px-8">
+                  {liveActive && (
+                    <div className="sticky top-0 z-10 -mx-4 bg-surface/85 px-4 backdrop-blur-md sm:-mx-8 sm:px-8">
+                      <LiveStage phase={live.phase} levelRef={live.levelRef} notice={live.notice} compact />
+                    </div>
+                  )}
                   <MessageList
                     messages={messages.filter((message) => message.id !== "welcome")}
                     pending={pending}
@@ -185,7 +216,11 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
               </div>
             ) : (
               <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-end px-4 pb-6 sm:px-8">
-                <EmptyState nombre={nombre} />
+                {liveActive ? (
+                  <LiveStage phase={live.phase} levelRef={live.levelRef} notice={live.notice} />
+                ) : (
+                  <EmptyState nombre={nombre} />
+                )}
               </div>
             )}
           </div>
@@ -193,28 +228,42 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
           {/* Glides from the middle of the screen to the bottom on the first message. */}
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 pt-2 sm:px-8">
             <QuickReplies replies={replies} disabled={pending} onSelect={send} />
+            {live.error && !liveActive && (
+              <p role="alert" className="text-center text-sm text-text-muted">
+                {live.error}
+              </p>
+            )}
             <motion.div
               layout="position"
               layoutDependency={started}
               transition={{ duration: duration.slow, ease: easing.standard }}
+              className="flex items-end"
             >
-              <ChatInput
-                value={draft}
-                pending={pending}
-                onChange={setDraft}
-                onSubmit={onSubmit}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-              />
+              <div className="min-w-0 flex-1">
+                <ChatInput
+                  value={draft}
+                  pending={pending}
+                  onChange={setDraft}
+                  onSubmit={onSubmit}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                />
+              </div>
+              <div className="ml-3 shrink-0">
+                <LiveControls
+                  supported={live.supported}
+                  active={liveActive}
+                  muted={live.muted}
+                  onStart={live.start}
+                  onStop={live.stop}
+                  onToggleMute={live.toggleMute}
+                />
+              </div>
             </motion.div>
           </div>
 
-          {/* Mirrors the upper area so the composer stays centered while the chat is empty. */}
-          {!started && (
-            <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-4 pt-4 sm:px-8">
-              <Starters suggestions={STARTERS} disabled={pending} onSelect={send} />
-            </div>
-          )}
+          {/* Empty spacer that mirrors the upper area, so the composer stays centered while the chat is empty. */}
+          {!started && <div aria-hidden className="min-h-0 flex-1" />}
 
           <p className="mx-auto mt-4 w-full max-w-5xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-center text-sm text-text-muted sm:px-8">
             Waylo orienta, no diagnostica ni receta. Si te sientes muy mal, ve a Urgencias.

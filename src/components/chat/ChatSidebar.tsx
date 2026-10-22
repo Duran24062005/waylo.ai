@@ -17,10 +17,12 @@ interface ChatSidebarProps {
   onEpsChange: (value: string) => void;
   onReset: () => void;
   nombre?: string | null;
+  /** The voice mode shows its own, larger mascot, so this one steps aside. */
+  hideMascot?: boolean;
 }
 
 /** Desktop side panel. On small screens the same pieces live in ChatHeader. */
-export function ChatSidebar({ mascotState, eps, onEpsChange, onReset, nombre }: ChatSidebarProps) {
+export function ChatSidebar({ mascotState, eps, onEpsChange, onReset, nombre, hideMascot }: ChatSidebarProps) {
   return (
     <aside className="hidden w-80 shrink-0 flex-col gap-8 bg-surface-raised p-8 shadow-raised lg:flex xl:w-96">
       <div className="flex items-center justify-between gap-3">
@@ -34,7 +36,7 @@ export function ChatSidebar({ mascotState, eps, onEpsChange, onReset, nombre }: 
       </div>
 
       <div className="flex flex-col items-center gap-5 text-center">
-        <Mascot state={mascotState} size={176} />
+        {!hideMascot && <Mascot state={mascotState} size={176} />}
         <StatusBadge state={mascotState} />
       </div>
 
