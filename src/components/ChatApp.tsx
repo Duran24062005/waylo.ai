@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { MotionConfig } from "motion/react";
+import { MotionConfig, motion } from "motion/react";
 import {
   ChatHeader,
   ChatInput,
@@ -9,8 +9,10 @@ import {
   EmptyState,
   MessageList,
   QuickReplies,
+  Starters,
 } from "@/components/chat";
 import type { MascotState } from "@/components/mascot";
+import { duration, easing } from "@/design/motion";
 import type { ChatMessage, TriageResponse } from "@/lib/types";
 
 const STARTERS = ["Dolor de cabeza", "Fiebre", "Dolor abdominal", "Golpe o caída"];
@@ -127,26 +129,36 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <ChatHeader mascotState={mascotState} eps={eps} onEpsChange={setEps} />
 
-          <div data-lenis-prevent className="flex-1 overflow-y-auto">
-            <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 sm:px-8">
-              {started ? (
-                <MessageList
-                  messages={messages.filter((message) => message.id !== "welcome")}
-                  pending={pending}
-                  card={result?.card}
-                  alertMessageIds={alertIds}
-                  errorMessageIds={errorIds}
-                  onRetry={retry}
-                />
-              ) : (
-                <EmptyState nombre={nombre} suggestions={STARTERS} disabled={pending} onSelect={send} />
-              )}
-            </div>
+          {/* Empty: the greeting sits right above the composer. Started: the conversation scrolls here. */}
+          <div className="flex min-h-0 flex-1 flex-col">
+            {started ? (
+              <div data-lenis-prevent className="flex-1 overflow-y-auto">
+                <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 sm:px-8">
+                  <MessageList
+                    messages={messages.filter((message) => message.id !== "welcome")}
+                    pending={pending}
+                    card={result?.card}
+                    alertMessageIds={alertIds}
+                    errorMessageIds={errorIds}
+                    onRetry={retry}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-end px-4 pb-6 sm:px-8">
+                <EmptyState nombre={nombre} />
+              </div>
+            )}
           </div>
 
-          <div className="px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 sm:px-8">
-            <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
-              <QuickReplies replies={replies} disabled={pending} onSelect={send} />
+          {/* Glides from the middle of the screen to the bottom on the first message. */}
+          <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 pt-2 sm:px-8">
+            <QuickReplies replies={replies} disabled={pending} onSelect={send} />
+            <motion.div
+              layout="position"
+              layoutDependency={started}
+              transition={{ duration: duration.slow, ease: easing.standard }}
+            >
               <ChatInput
                 value={draft}
                 pending={pending}
@@ -155,11 +167,19 @@ export function ChatApp({ nombre }: { nombre?: string | null }) {
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
               />
-              <p className="text-center text-sm text-text-muted">
-                Waylo orienta, no diagnostica ni receta. Si te sientes muy mal, ve a Urgencias.
-              </p>
-            </div>
+            </motion.div>
           </div>
+
+          {/* Mirrors the upper area so the composer stays centered while the chat is empty. */}
+          {!started && (
+            <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col px-4 pt-4 sm:px-8">
+              <Starters suggestions={STARTERS} disabled={pending} onSelect={send} />
+            </div>
+          )}
+
+          <p className="mx-auto mt-4 w-full max-w-5xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-center text-sm text-text-muted sm:px-8">
+            Waylo orienta, no diagnostica ni receta. Si te sientes muy mal, ve a Urgencias.
+          </p>
         </div>
       </div>
     </MotionConfig>
