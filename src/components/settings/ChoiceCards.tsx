@@ -1,9 +1,7 @@
 "use client";
 
 import { useId, useRef, type KeyboardEvent, type ReactNode } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Tick02Icon } from "@hugeicons/core-free-icons";
+import { motion } from "motion/react";
 import { duration, easing } from "@/design/motion";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +10,7 @@ export interface ChoiceOption<T extends string> {
   label: string;
   /** A line under the label. */
   hint?: string;
-  /** What is drawn at the start of the card: an avatar, a flag. */
+  /** What is drawn at the start of the option: an avatar, a flag. */
   visual: ReactNode;
 }
 
@@ -24,8 +22,8 @@ interface ChoiceCardsProps<T extends string> {
 }
 
 /**
- * Pill-shaped cards to pick one option. The chosen card is the dark one: a pill that slides from the old choice to
- * the new, with a check that pops in. The arrow keys move the choice, as in any group of radio buttons.
+ * One choice out of a few, drawn like the other selectors of the settings: a sunken tray, and a raised pill that slides
+ * to the chosen option. Each option carries a picture (an avatar, a flag). The arrow keys move the choice.
  */
 export function ChoiceCards<T extends string>({ label, value, options, onChange }: ChoiceCardsProps<T>) {
   const pillId = useId();
@@ -48,8 +46,8 @@ export function ChoiceCards<T extends string>({ label, value, options, onChange 
       role="radiogroup"
       aria-label={label}
       onKeyDown={onKeyDown}
-      // Two columns: with a check beside the label, a card needs the room. Cards with a hint stack on a phone.
-      className={cn("grid gap-1.5 rounded-[2.25rem] bg-surface p-1.5 shadow-inset", tall ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-2")}
+      // Options with a hint stack on a phone; the others stay two by two.
+      className={cn("grid gap-1 rounded-xl bg-surface p-1.5 shadow-inset", tall ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-2")}
     >
       {options.map((option, index) => {
         const active = option.value === value;
@@ -65,22 +63,24 @@ export function ChoiceCards<T extends string>({ label, value, options, onChange 
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(option.value)}
             className={cn(
-              "lift lift-sm relative flex cursor-pointer items-center gap-3 rounded-full bg-surface-raised px-3 py-2 text-left shadow-soft",
-              tall ? "min-h-[4.5rem]" : "min-h-14",
+              "relative flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left",
+              tall ? "min-h-16" : "min-h-12",
+              "transition-colors duration-[var(--duration-base)] ease-standard",
               "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
+              active ? "text-text" : "text-text-muted hover:text-text",
             )}
           >
             {active ? (
               <motion.span
                 layoutId={pillId}
                 transition={{ duration: duration.base, ease: easing.standard }}
-                className="absolute inset-0 rounded-full bg-text shadow-solid"
+                className="absolute inset-0 rounded-lg bg-surface-raised shadow-soft"
               />
             ) : null}
 
-            {/* The visual gives a small hop when it is chosen. */}
+            {/* The picture gives a small hop when it is chosen. */}
             <motion.span
-              animate={active ? { scale: [1, 1.14, 1] } : { scale: 1 }}
+              animate={active ? { scale: [1, 1.12, 1] } : { scale: 1 }}
               transition={{ duration: duration.base, ease: easing.emphasis }}
               className="relative shrink-0"
             >
@@ -88,41 +88,9 @@ export function ChoiceCards<T extends string>({ label, value, options, onChange 
             </motion.span>
 
             <span className="relative min-w-0 flex-1 leading-tight">
-              <span
-                className={cn(
-                  "block font-heading text-sm font-semibold transition-colors duration-[var(--duration-base)] ease-standard",
-                  active ? "text-surface" : "text-text",
-                )}
-              >
-                {option.label}
-              </span>
-              {option.hint ? (
-                <span
-                  className={cn(
-                    "mt-0.5 block text-sm transition-colors duration-[var(--duration-base)] ease-standard",
-                    active ? "text-surface/70" : "text-text-muted",
-                  )}
-                >
-                  {option.hint}
-                </span>
-              ) : null}
+              <span className="block font-heading text-sm font-semibold">{option.label}</span>
+              {option.hint ? <span className="mt-0.5 block text-sm font-normal text-text-muted">{option.hint}</span> : null}
             </span>
-
-            <AnimatePresence initial={false}>
-              {active ? (
-                <motion.span
-                  key="check"
-                  aria-hidden
-                  initial={{ scale: 0, rotate: -40, opacity: 0 }}
-                  animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  transition={{ duration: duration.base, ease: easing.emphasis }}
-                  className="relative mr-1 grid size-7 shrink-0 place-items-center rounded-full bg-surface text-text"
-                >
-                  <HugeiconsIcon icon={Tick02Icon} size={16} strokeWidth={3} />
-                </motion.span>
-              ) : null}
-            </AnimatePresence>
           </button>
         );
       })}

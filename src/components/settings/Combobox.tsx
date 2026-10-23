@@ -24,6 +24,10 @@ interface ComboboxProps {
   value: string | null;
   onChange: (value: string | null) => void;
   disabled?: boolean;
+  /** Shows the search box. Turn it off for a short list, where searching only gets in the way. */
+  searchable?: boolean;
+  /** Shows the row that clears the choice. */
+  clearable?: boolean;
 }
 
 /** A field with a long list behind it (cities, countries): open it, type to narrow the list, pick one. */
@@ -38,6 +42,8 @@ export function Combobox({
   value,
   onChange,
   disabled,
+  searchable = true,
+  clearable = true,
 }: ComboboxProps) {
   const id = useId();
   const [open, setOpen] = useState(false);
@@ -119,7 +125,8 @@ export function Combobox({
             data-lenis-prevent
             className="popover-motion z-50 w-[var(--radix-popover-trigger-width)] min-w-64 rounded-xl bg-surface-raised p-2 text-text shadow-raised"
           >
-            <div className="relative">
+            {/* Without the search box the input stays, unseen, to take the arrow keys and Enter. */}
+            <div className={cn("relative", !searchable && "sr-only")}>
               <HugeiconsIcon
                 icon={Search01Icon}
                 size={18}
@@ -175,7 +182,7 @@ export function Combobox({
                 ))
               )}
             </ul>
-            {value ? (
+            {value && clearable ? (
               <button
                 type="button"
                 onClick={() => choose(null)}

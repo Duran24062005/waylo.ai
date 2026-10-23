@@ -6,13 +6,13 @@ import type { Voice } from "@/lib/preferences";
 
 // Drawn here, in the page's own palette: black and white that follow the theme, so a voice reads on both.
 
-/** The disc every visual sits in. It stays light on the dark chosen card and dark on the light one, through the theme. */
-const DISC = "grid size-11 shrink-0 place-items-center overflow-hidden rounded-full bg-surface shadow-inset text-text";
+/** The round frame of an avatar. It is a small field, like the inputs: sunken into the raised pill. */
+const DISC = "grid size-10 shrink-0 place-items-center overflow-hidden rounded-full bg-surface text-text shadow-inset";
 
 /** A bust of a woman: long hair, a face, shoulders. */
 function FemaleAvatar() {
   return (
-    <svg viewBox="0 0 64 64" width="44" height="44" aria-hidden focusable="false" fill="currentColor">
+    <svg viewBox="0 0 64 64" width="40" height="40" aria-hidden focusable="false" fill="currentColor">
       {/* Hair behind the head, down to the shoulders. */}
       <path d="M19.5 31c0-10 5.6-16.5 12.5-16.5S44.5 21 44.5 31v15h-25V31Z" />
       {/* Shoulders and neck. */}
@@ -28,7 +28,7 @@ function FemaleAvatar() {
 /** A bust of a man: short hair, a face, shoulders. */
 function MaleAvatar() {
   return (
-    <svg viewBox="0 0 64 64" width="44" height="44" aria-hidden focusable="false" fill="currentColor">
+    <svg viewBox="0 0 64 64" width="40" height="40" aria-hidden focusable="false" fill="currentColor">
       <path d="M8 66c0-12 10-17.5 24-17.5S56 54 56 66H8Z" opacity="0.5" />
       <rect x="27.6" y="38" width="8.8" height="12" rx="3.6" opacity="0.28" />
       <ellipse cx="32" cy="29" rx="9.4" ry="10.6" opacity="0.18" />
@@ -46,19 +46,21 @@ export function VoiceAvatar({ voice }: { voice: Voice }) {
 function Flag({ locale }: { locale: Locale }) {
   const clip = useId();
   return (
-    <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden focusable="false">
+    <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden focusable="false">
       <defs>
         <clipPath id={clip}>
           <circle cx="16" cy="16" r="16" />
         </clipPath>
       </defs>
       <g clipPath={`url(#${clip})`}>
+        {/* Spain: red, yellow, red, the yellow band twice as tall. */}
         {locale === "es" ? (
           <>
             <rect width="32" height="32" fill="#c60b1e" />
             <rect y="8" width="32" height="16" fill="#ffc400" />
           </>
         ) : null}
+        {/* United Kingdom: the crosses of Saint George, Saint Andrew and Saint Patrick. */}
         {locale === "en" ? (
           <>
             <rect width="32" height="32" fill="#012169" />
@@ -68,16 +70,19 @@ function Flag({ locale }: { locale: Locale }) {
             <path d="M16 0v32M0 16h32" stroke="#c8102e" strokeWidth="6" />
           </>
         ) : null}
+        {/* Portugal: green and red in two to three, with the armillary sphere where they meet. */}
         {locale === "pt" ? (
           <>
-            <rect width="32" height="32" fill="#009b3a" />
-            <path d="M16 4.5 29 16 16 27.5 3 16Z" fill="#fedf00" />
-            <circle cx="16" cy="16" r="6.4" fill="#002776" />
-            <path d="M10.2 14.4c4-1.2 8.6-.4 11.6 2.2" stroke="#fff" strokeWidth="1.2" fill="none" />
+            <rect width="32" height="32" fill="#ff0000" />
+            <rect width="12.8" height="32" fill="#006600" />
+            <circle cx="12.8" cy="16" r="5.6" fill="none" stroke="#ffe000" strokeWidth="1.8" />
+            <circle cx="12.8" cy="16" r="3.4" fill="#ffe000" />
+            <rect x="10.9" y="13.4" width="3.8" height="5.2" rx="1.1" fill="#ff0000" />
+            <rect x="11.8" y="14.7" width="2" height="2.6" rx=".6" fill="#fff" />
           </>
         ) : null}
       </g>
-      {/* A hairline ring, so a white edge does not melt into the card. */}
+      {/* A hairline ring, so a white edge does not melt into the pill. */}
       <circle cx="16" cy="16" r="15.6" fill="none" stroke="currentColor" strokeOpacity="0.16" />
     </svg>
   );
@@ -85,7 +90,7 @@ function Flag({ locale }: { locale: Locale }) {
 
 export function LanguageFlag({ locale }: { locale: Locale }) {
   return (
-    <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full text-text">
+    <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-full text-text">
       <Flag locale={locale} />
     </span>
   );
@@ -94,8 +99,8 @@ export function LanguageFlag({ locale }: { locale: Locale }) {
 /** Automatic detection: a globe, since no single country is the language. */
 export function AutoLanguageIcon() {
   return (
-    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-surface text-text shadow-inset">
-      <HugeiconsIcon icon={Globe02Icon} size={20} strokeWidth={2.25} aria-hidden />
+    <span className="grid size-7 shrink-0 place-items-center rounded-full bg-surface text-text shadow-inset">
+      <HugeiconsIcon icon={Globe02Icon} size={16} strokeWidth={2.25} aria-hidden />
     </span>
   );
 }

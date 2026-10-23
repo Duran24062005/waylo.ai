@@ -6,6 +6,7 @@ import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import {
   Analytics01Icon,
   Cancel01Icon,
+  Hospital01Icon,
   LanguageSquareIcon,
   Mic01Icon,
   PaintBrush01Icon,
@@ -18,11 +19,13 @@ import { useT } from "@/i18n/I18nProvider";
 import type { LiveLanguage, Voice } from "@/lib/preferences";
 import type { Profile } from "@/lib/profile";
 import type { SessionInfo } from "@/lib/profile-db";
+import type { EpsState } from "@/lib/eps";
 import type { AccountUsage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { AccountPanel } from "./AccountPanel";
 import { AppearancePanel } from "./AppearancePanel";
 import { GeneralPanel } from "./GeneralPanel";
+import { EpsPanel } from "./EpsPanel";
 import { LivePanel } from "./LivePanel";
 import { SecurityPanel } from "./SecurityPanel";
 import { UsagePanel } from "./UsagePanel";
@@ -33,6 +36,7 @@ const ICONS: Record<SectionId, IconSvgElement> = {
   appearance: PaintBrush01Icon,
   live: Mic01Icon,
   account: UserCircleIcon,
+  eps: Hospital01Icon,
   security: Shield01Icon,
   usage: Analytics01Icon,
 };
@@ -45,6 +49,7 @@ interface SettingsData {
   profile: Profile | null;
   sessions: SessionInfo[];
   usage: AccountUsage | null;
+  eps: EpsState | null;
 }
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -132,7 +137,7 @@ export function SettingsDialog({ section, onSection, onClose }: SettingsDialogPr
     tabs.current[next]?.focus();
   }
 
-  const needsData = section === "live" || section === "account" || section === "security" || section === "usage";
+  const needsData = section !== "general" && section !== "appearance";
 
   // A plain function, not a component: a component declared here would be rebuilt on every render and lose its focus.
   function renderTab(id: SectionId) {
@@ -261,6 +266,9 @@ export function SettingsDialog({ section, onSection, onClose }: SettingsDialogPr
                 </div>
                 <div role="tabpanel" id="settings-panel-account" aria-labelledby="settings-tab-account" hidden={section !== "account"} className="flex flex-col gap-8">
                   <AccountPanel profile={data.profile} />
+                </div>
+                <div role="tabpanel" id="settings-panel-eps" aria-labelledby="settings-tab-eps" hidden={section !== "eps"} className="flex flex-col gap-8">
+                  <EpsPanel eps={data.eps} />
                 </div>
                 <div role="tabpanel" id="settings-panel-security" aria-labelledby="settings-tab-security" hidden={section !== "security"} className="flex flex-col gap-8">
                   <SecurityPanel profile={data.profile} sessions={data.sessions} />

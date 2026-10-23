@@ -5,6 +5,7 @@ const getSession = vi.fn();
 const getProfile = vi.fn();
 const listSessions = vi.fn();
 const readUsage = vi.fn();
+const getEpsState = vi.fn();
 
 vi.mock("next/headers", () => ({
   cookies: async () => ({ get: (name: string) => (jar[name] ? { value: jar[name] } : undefined) }),
@@ -15,6 +16,7 @@ vi.mock("@/lib/profile-db", () => ({
   getProfile: (...args: unknown[]) => getProfile(...args),
   listSessions: (...args: unknown[]) => listSessions(...args),
 }));
+vi.mock("@/lib/eps-db", () => ({ getEpsState: (...args: unknown[]) => getEpsState(...args) }));
 vi.mock("@/lib/usage", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/usage")>()),
   readUsage: (...args: unknown[]) => readUsage(...args),
@@ -31,6 +33,7 @@ beforeEach(() => {
   getProfile.mockReset().mockResolvedValue(PROFILE);
   listSessions.mockReset().mockResolvedValue(SESSIONS);
   readUsage.mockReset().mockResolvedValue(null);
+  getEpsState.mockReset().mockResolvedValue({ eps: "confianza", cedula: "••••••3456", codigoVenceEn: null, autorizado: true, acceso: false });
 });
 
 describe("GET /api/configuracion", () => {
@@ -47,6 +50,7 @@ describe("GET /api/configuracion", () => {
       signedIn: true,
       profile: PROFILE,
       sessions: SESSIONS,
+      eps: { eps: "confianza", cedula: "••••••3456", autorizado: true, acceso: false },
       voice: "masculino",
       liveLanguage: "en",
       usage: { dayUsed: 0, dayLimit: 100, monthUsed: 0, monthLimit: 2000, blocked: null },
@@ -59,7 +63,7 @@ describe("GET /api/configuracion", () => {
 
     const body = await (await GET()).json();
 
-    expect(body).toEqual({ signedIn: false, voice: "femenino", liveLanguage: "auto", profile: null, sessions: [], usage: null });
+    expect(body).toEqual({ signedIn: false, voice: "femenino", liveLanguage: "auto", profile: null, sessions: [], usage: null, eps: null });
     expect(getProfile).not.toHaveBeenCalled();
     expect(listSessions).not.toHaveBeenCalled();
   });

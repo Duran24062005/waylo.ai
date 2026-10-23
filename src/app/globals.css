@@ -464,6 +464,12 @@ body {
   }
 }
 
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
 @keyframes popover-in-up {
   from {
     opacity: 0;

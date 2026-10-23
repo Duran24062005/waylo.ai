@@ -67,3 +67,12 @@ await sql`
   )
 `;
 console.log("Tabla de uso lista.");
+
+// EPS: the insurer the person picked, their ID number and the temporary code the insurer sent, and the authorization.
+// The ID number and the code are stored encrypted (see src/lib/secrets.ts), never as plain text.
+await sql`alter table personas add column if not exists eps text`;
+await sql`alter table personas add column if not exists eps_cedula_cifrada text`;
+await sql`alter table personas add column if not exists eps_codigo_cifrado text`;
+await sql`alter table personas add column if not exists eps_codigo_expira timestamptz`;
+await sql`alter table personas add column if not exists eps_autoriza_en timestamptz`;
+console.log("Columnas de EPS listas.");

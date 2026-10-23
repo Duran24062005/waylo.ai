@@ -12,12 +12,12 @@ import { cn } from "@/lib/utils";
 type PlayerState = "idle" | "loading" | "playing" | "paused";
 
 /** Bars on each side of the button. */
-const BARS_PER_SIDE = 15;
+const BARS_PER_SIDE = 13;
 
 /** The bars' resting heights, in px: tall beside the button, thinner toward the edges, never two alike in a row. */
 const BASE_HEIGHTS = Array.from({ length: BARS_PER_SIDE }, (_, d) => {
   const fall = 1 - d / (BARS_PER_SIDE * 1.15);
-  return Math.round(10 + 40 * Math.abs(Math.sin(d * 1.7 + 0.6)) * fall);
+  return Math.round(8 + 26 * Math.abs(Math.sin(d * 1.7 + 0.6)) * fall);
 });
 
 const swap = {
@@ -170,7 +170,7 @@ export function VoicePlayer({ voice }: { voice: Voice }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative flex h-24 w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-surface px-3 shadow-inset sm:gap-4 sm:px-5">
+      <div className="relative flex h-20 w-full items-center justify-center gap-3 overflow-hidden rounded-xl bg-surface px-3 shadow-inset sm:gap-4 sm:px-5">
         <div aria-hidden className="flex flex-1 items-center justify-end gap-[3px] sm:gap-1">
           {Array.from({ length: BARS_PER_SIDE }, (_, i) => (
             <Bar key={i} index={i} distance={BARS_PER_SIDE - 1 - i} bars={bars} playing={playing} />
@@ -193,16 +193,16 @@ export function VoicePlayer({ voice }: { voice: Voice }) {
             aria-label={label}
             title={label}
             aria-busy={state === "loading"}
-            className="lift lift-sm relative grid size-16 cursor-pointer place-items-center rounded-full bg-surface-raised text-text shadow-raised focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            className="lift lift-sm relative grid size-12 cursor-pointer place-items-center rounded-full bg-surface-raised text-text shadow-soft focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
           >
             <AnimatePresence mode="wait" initial={false}>
               <motion.span key={state === "loading" ? "loading" : playing ? "pause" : "play"} {...swap} className="grid place-items-center">
                 {state === "loading" ? (
                   <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.9, ease: "linear", repeat: Infinity }} className="grid">
-                    <HugeiconsIcon icon={Loading03Icon} size={26} strokeWidth={2.5} aria-hidden />
+                    <HugeiconsIcon icon={Loading03Icon} size={22} strokeWidth={2.5} aria-hidden />
                   </motion.span>
                 ) : (
-                  <HugeiconsIcon icon={playing ? PauseIcon : PlayIcon} size={26} strokeWidth={2.5} aria-hidden />
+                  <HugeiconsIcon icon={playing ? PauseIcon : PlayIcon} size={22} strokeWidth={2.5} aria-hidden />
                 )}
               </motion.span>
             </AnimatePresence>
@@ -241,13 +241,13 @@ function Bar({ index, distance, bars, playing }: BarProps) {
         bars.current[index] = el;
       }}
       className={cn(
-        "w-[3px] shrink-0 rounded-full bg-text sm:w-1",
+        "w-[3px] shrink-0 rounded-full bg-text",
         // While it plays the frame loop sets the size every frame; at rest it settles back with a short ease.
         !playing && "transition-transform duration-[var(--duration-base)] ease-standard",
         // Now and then a fainter bar, so the row is not one flat tone.
-        distance % 4 === 3 ? "opacity-35" : "opacity-80",
+        distance % 4 === 3 ? "opacity-30" : "opacity-65",
         // The bars on a phone are fewer: the outer ones are hidden to leave the button room.
-        distance > 9 && "hidden sm:block",
+        distance > 8 && "hidden sm:block",
       )}
       style={{ height: BASE_HEIGHTS[distance] }}
     />
