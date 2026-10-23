@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { useI18n } from "@/i18n/I18nProvider";
+import { isLocale, type Locale } from "@/i18n/locales";
 import { createVad, splitForSpeech } from "@/lib/voice";
 
 export type LivePhase = "off" | "waiting" | "listening" | "thinking" | "speaking" | "muted" | "error";
@@ -42,8 +44,8 @@ interface Engine {
 }
 
 interface Options {
-  /** Receives each sentence the patient says, already transcribed. */
-  onUtterance: (text: string) => void;
+  /** Receives each sentence the patient says, already transcribed, and the language it was said in when it is known. */
+  onUtterance: (text: string, language: Locale | null) => void;
   /** True while the chat is waiting for the AI's answer. Listening pauses meanwhile. */
   busy: boolean;
 }
@@ -57,6 +59,8 @@ function loudness(analyser: AnalyserNode, buffer: Float32Array<ArrayBuffer>): nu
 }
 
 export function useLiveVoice({ onUtterance, busy }: Options) {
+  const { t } = useI18n();
+  const tRef = useRef(t);
   const [supported, setSupported] = useState(false);
   const [active, setActive] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -76,6 +80,7 @@ export function useLiveVoice({ onUtterance, busy }: Options) {
 
   useEffect(() => {
     onUtteranceRef.current = onUtterance;
+    tRef.current = t;
     flags.current = { muted, busy, transcribing, talking };
   });
 
@@ -116,10 +121,10 @@ export function useLiveVoice({ onUtterance, busy }: Options) {
         form.append("audio", blob, `voz.${blob.type.includes("mp4") ? "mp4" : "webm"}`);
         const response = await fetch("/api/voice/transcribe", { method: "POST", body: form });
         if (!response.ok) throw new Error("transcription failed");
-        const { text } = (await response.json()) as { text?: string };
-        if (text && text.trim().length > 1) onUtteranceRef.current(text.trim());
+        const { text, language } = (await response.json()) as { text?: string; language?: string | null };
+        if (text && text.trim().length > 1) onUtteranceRef.current(text.trim(), isLocale(language) ? language : null);
       } catch {
-        showNotice("No te pude entender. Inténtalo de nuevo.");
+        showNotice(tRef.current.live.notUnderstood);
       } finally {
         flags.current.transcribing = false;
         setTranscribing(false);
@@ -199,7 +204,7 @@ export function useLiveVoice({ onUtterance, busy }: Options) {
     if (engineRef.current) return;
     setError(null);
     if (!isVoiceSupported()) {
-      setError("Tu navegador no permite usar el micrófono.");
+      setError(tRef.current.live.micUnsupported);
       return;
     }
 
@@ -210,7 +215,7 @@ export function useLiveVoice({ onUtterance, busy }: Options) {
       });
     } catch (cause) {
       const denied = cause instanceof DOMException && (cause.name === "NotAllowedError" || cause.name === "SecurityError");
-      setError(denied ? "Permite el micrófono en tu navegador para usar la voz." : "No pude acceder al micrófono.");
+      setError(denied ? tRef.current.live.micDenied : tRef.current.live.micFailed);
       return;
     }
 
@@ -298,7 +303,7 @@ export function useLiveVoice({ onUtterance, busy }: Options) {
   }, []);
 
   const speak = useCallback(
-    (text: string) => {
+    (text: string, language?: Locale) => {
       const engine = engineRef.current;
       if (!engine) return;
       const pieces = splitForSpeech(text);
@@ -314,7 +319,7 @@ export function useLiveVoice({ onUtterance, busy }: Options) {
         fetch("/api/voice/speak", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: piece }),
+          body: JSON.stringify({ text: piece, lang: language }),
         })
           .then((response) => (response.ok ? response.blob() : null))
           .catch(() => null);

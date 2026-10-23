@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Manrope, Pacifico, Poppins } from "next/font/google";
 import { SmoothScroll } from "@/components/SmoothScroll";
+import { I18nProvider } from "@/i18n/I18nProvider";
+import { getLocale, getMessages } from "@/i18n/server";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { THEME_INIT_SCRIPT } from "@/components/theme/theme-script";
 import "./globals.css";
@@ -15,26 +17,32 @@ const poppins = Poppins({
 });
 const pacifico = Pacifico({ weight: "400", subsets: ["latin"], variable: "--font-pacifico", display: "swap" });
 
-export const metadata: Metadata = {
-  title: { default: "Waylo.ai", template: "%s | Waylo.ai" },
-  description: "Orientación para saber a qué nivel de atención acudir.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getMessages();
+  return {
+    title: { default: "Waylo.ai", template: "%s | Waylo.ai" },
+    description: t.meta.siteDescription,
+  };
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
   return (
-    <html lang="es" suppressHydrationWarning className="scroll-soft">
+    <html lang={locale} suppressHydrationWarning className="scroll-soft">
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className={`${manrope.variable} ${poppins.variable} ${pacifico.variable} antialiased`}>
-        <ThemeProvider>
-          <SmoothScroll />
-          {children}
-        </ThemeProvider>
+        <I18nProvider locale={locale}>
+          <ThemeProvider>
+            <SmoothScroll />
+            {children}
+          </ThemeProvider>
+        </I18nProvider>
       </body>
     </html>
   );

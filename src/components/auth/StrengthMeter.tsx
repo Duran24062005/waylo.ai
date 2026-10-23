@@ -4,19 +4,20 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Cancel01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { motion } from "motion/react";
 import { duration, easing } from "@/design/motion";
+import { useT } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 
+// A letter counts as uppercase in any language, so a password in Portuguese or French is judged the same way.
 const CHECKS = [
-  { id: "len", label: "8 o más caracteres", test: (v: string) => v.length >= 8 },
-  { id: "upper", label: "Una mayúscula", test: (v: string) => /[A-ZÁÉÍÓÚÑ]/.test(v) },
-  { id: "num", label: "Un número", test: (v: string) => /\d/.test(v) },
-  { id: "sym", label: "Un símbolo", test: (v: string) => /[^A-Za-z0-9\sÁÉÍÓÚÑáéíóúñ]/.test(v) },
+  { id: "length", test: (v: string) => v.length >= 8 },
+  { id: "upper", test: (v: string) => /\p{Lu}/u.test(v) },
+  { id: "number", test: (v: string) => /\d/.test(v) },
+  { id: "symbol", test: (v: string) => /[^\p{L}\p{N}\s]/u.test(v) },
 ] as const;
-
-const LEVEL = ["Muy débil", "Débil", "Aceptable", "Buena", "Fuerte"] as const;
 
 /** Guidance only. The server asks for 8 characters; the rest helps pick a stronger password. */
 export function StrengthMeter({ password }: { password: string }) {
+  const t = useT().auth.strength;
   const results = CHECKS.map((check) => ({ ...check, ok: check.test(password) }));
   const score = password ? results.filter((r) => r.ok).length : 0;
 
@@ -36,7 +37,7 @@ export function StrengthMeter({ password }: { password: string }) {
           ))}
         </div>
         <span className="min-w-20 text-right font-heading text-xs font-medium text-text-muted">
-          {password ? LEVEL[score] : "Sin escribir"}
+          {password ? t.levels[score] : t.empty}
         </span>
       </div>
       <ul className="grid grid-cols-2 gap-x-3 gap-y-1.5">
@@ -52,8 +53,8 @@ export function StrengthMeter({ password }: { password: string }) {
               <HugeiconsIcon icon={r.ok ? Tick02Icon : Cancel01Icon} size={12} strokeWidth={3} />
             </span>
             <span>
-              {r.label}
-              <span className="sr-only">{r.ok ? ": cumplido" : ": falta"}</span>
+              {t.checks[r.id]}
+              <span className="sr-only">{r.ok ? t.met : t.missing}</span>
             </span>
           </li>
         ))}

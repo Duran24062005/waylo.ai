@@ -1,5 +1,6 @@
 import { HugeiconsIcon } from "@hugeicons/react";
 import { MapPinIcon, PhoneIcon, Tick02Icon } from "@hugeicons/core-free-icons";
+import { useT } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import type { OrientationCard as Card } from "@/lib/types";
 
@@ -10,6 +11,7 @@ const BADGE: Record<Card["nivel"], string> = {
 };
 
 export function OrientationCard({ card }: { card: Card }) {
+  const t = useT().card;
   const urgent = card.nivel === "urgencias";
 
   return (
@@ -19,11 +21,11 @@ export function OrientationCard({ card }: { card: Card }) {
         // Urgencias keeps a danger outline: this is a safety cue, not decoration.
         urgent && "ring-2 ring-[#c62828]",
       )}
-      aria-label="Orientación"
+      aria-label={t.region}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-heading text-xs font-medium uppercase tracking-wide text-text-muted">
-          Nivel de atención recomendado
+          {t.recommended}
         </p>
         <p className={cn("rounded-full px-3 py-1 font-heading text-sm font-semibold", BADGE[card.nivel])}>
           {card.nivelLabel}
@@ -32,11 +34,11 @@ export function OrientationCard({ card }: { card: Card }) {
 
       <div className="mt-4 space-y-4">
         <div>
-          <h2 className="font-heading text-sm font-semibold text-text">Por qué</h2>
+          <h2 className="font-heading text-sm font-semibold text-text">{t.why}</h2>
           <p className="mt-1 text-sm leading-relaxed text-text">{card.justificacion}</p>
         </div>
         <div>
-          <h2 className="font-heading text-sm font-semibold text-text">Qué debes llevar</h2>
+          <h2 className="font-heading text-sm font-semibold text-text">{t.bring}</h2>
           <ul className="mt-1.5 space-y-1.5">
             {card.queLlevar.map((item) => (
               <li key={item} className="flex items-start gap-2 text-sm text-text">
@@ -50,7 +52,7 @@ export function OrientationCard({ card }: { card: Card }) {
 
       {card.sedes.length > 0 && (
         <div className="mt-4">
-          <h2 className="font-heading text-sm font-semibold text-text">Lugares de ejemplo</h2>
+          <h2 className="font-heading text-sm font-semibold text-text">{t.examples}</h2>
           <ul className="mt-2 space-y-2">
             {card.sedes.map((site) => (
               <li key={site.id} className="rounded-xl bg-surface px-3.5 py-3 shadow-inset">

@@ -1,14 +1,15 @@
 import { z } from "zod";
 import { isValidBirthDate } from "@/lib/birthdate";
 
+// The messages are codes (keys of `server.errors` in the dictionaries): the route words them in the person's language.
 export const registroSchema = z.object({
-  nombre: z.string().trim().max(80, "El nombre es muy largo.").default(""),
-  email: z.string().trim().toLowerCase().max(120).regex(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, "Revisa tu correo."),
-  password: z.string().min(8, "Usa al menos 8 caracteres.").max(128, "La contraseña es muy larga."),
+  nombre: z.string().trim().max(80, "nameLong").default(""),
+  email: z.string().trim().toLowerCase().max(120, "emailFormat").regex(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, "emailFormat"),
+  password: z.string().min(8, "passwordShort").max(128, "passwordLong"),
   dia: z.number().int(),
   mes: z.number().int(),
   anio: z.number().int(),
-  acepta: z.literal(true, { message: "Debes aceptar el uso de tus datos para crear la cuenta." }),
+  acepta: z.literal(true, { message: "consent" }),
 });
 
 export const loginSchema = z.object({

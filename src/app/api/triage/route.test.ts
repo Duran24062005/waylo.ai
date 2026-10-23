@@ -3,11 +3,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const jar: Record<string, string> = {};
 const runTriage = vi.fn();
 const getSession = vi.fn();
+const readUsage = vi.fn();
+const saveUsage = vi.fn();
 
 vi.mock("next/headers", () => ({
   cookies: async () => ({ get: (name: string) => (jar[name] ? { value: jar[name] } : undefined) }),
+  headers: async () => ({ get: () => null }),
 }));
 vi.mock("@/lib/session", () => ({ getSession: () => getSession() }));
+// The counting rules are the real ones; only the reads and writes of the database are replaced.
+vi.mock("@/lib/usage", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/usage")>()),
+  readUsage: (id: string) => readUsage(id),
+  saveUsage: (id: string, row: unknown) => saveUsage(id, row),
+}));
 vi.mock("@/lib/triage", () => ({
   runTriage: (input: unknown) => runTriage(input),
   TriageUnavailableError: class TriageUnavailableError extends Error {},
@@ -41,6 +50,8 @@ beforeEach(() => {
   for (const key of Object.keys(jar)) delete jar[key];
   runTriage.mockReset().mockResolvedValue(question);
   getSession.mockReset().mockResolvedValue(null);
+  readUsage.mockReset().mockResolvedValue(null);
+  saveUsage.mockReset().mockResolvedValue(undefined);
   vi.stubEnv("AUTH_SECRET", "secreto-de-prueba");
   waiting = encodeGuest(5, NOW + GUEST_WAIT_MS);
 });
@@ -127,16 +138,107 @@ describe("POST /api/triage for visitors", () => {
 });
 
 describe("POST /api/triage for signed-in users", () => {
-  it("has no limit, even with a used-up visitor cookie, and adds no counter", async () => {
-    getSession.mockResolvedValue({ id: "u1", nombre: "Gustavo" });
+  const dayOf = (overrides: object = {}) => ({
+    dia: "2026-10-23",
+    usadasDia: 0,
+    bloqueadoHasta: null,
+    mes: "2026-10",
+    usadasMes: 0,
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    getSession.mockResolvedValue({ id: "u1", nombre: "Gustavo", apodo: null, sid: "s1" });
+  });
+
+  it("ignores a used-up visitor cookie, uses no visitor counter, and records the reply on the account", async () => {
     jar[GUEST_COOKIE] = waiting;
+
+    const response = await post();
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({ ...question, usage: { dayUsed: 1, dayLimit: 100, monthUsed: 1, monthLimit: 2000, blocked: null } });
+    expect(body.guest).toBeUndefined();
+    expect(savedCount(response)).toBeUndefined();
+    expect(saveUsage).toHaveBeenCalledWith("u1", expect.objectContaining({ usadasDia: 1, usadasMes: 1 }));
+  });
+
+  it("counts on from what the account has already used today", async () => {
+    readUsage.mockResolvedValue(dayOf({ usadasDia: 41, usadasMes: 300 }));
+
+    const body = await (await post()).json();
+
+    expect(body.usage).toMatchObject({ dayUsed: 42, monthUsed: 301 });
+  });
+
+  it("gives the hundredth reply and then starts the 12 hour wait", async () => {
+    readUsage.mockResolvedValue(dayOf({ usadasDia: 99, usadasMes: 99 }));
+
+    const body = await (await post()).json();
+
+    expect(body.usage.dayUsed).toBe(100);
+    expect(body.usage.blocked).toEqual({ scope: "day", resetAt: NOW + 12 * 60 * 60 * 1000 });
+  });
+
+  it("blocks the next request while the daily wait lasts, without calling the model", async () => {
+    const until = NOW + 5 * 60 * 60 * 1000;
+    readUsage.mockResolvedValue(dayOf({ usadasDia: 100, usadasMes: 100, bloqueadoHasta: until }));
+
+    const response = await post();
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({ error: "usage_limit", usage: { blocked: { scope: "day", resetAt: until } } });
+    expect(runTriage).not.toHaveBeenCalled();
+    expect(saveUsage).not.toHaveBeenCalled();
+  });
+
+  it("answers again once the wait is over", async () => {
+    readUsage.mockResolvedValue(dayOf({ usadasDia: 100, bloqueadoHasta: NOW - 1 }));
 
     const response = await post();
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual(question);
-    expect(savedCount(response)).toBeUndefined();
-    expect(runTriage).toHaveBeenCalledTimes(1);
+    expect((await response.json()).usage).toMatchObject({ dayUsed: 1, blocked: null });
+  });
+
+  it("blocks for the rest of the month after 2000 replies", async () => {
+    readUsage.mockResolvedValue(dayOf({ usadasMes: 2000 }));
+
+    const response = await post();
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({
+      error: "usage_limit",
+      usage: { blocked: { scope: "month", resetAt: Date.UTC(2026, 10, 1, 5, 0, 0) } },
+    });
+    expect(runTriage).not.toHaveBeenCalled();
+  });
+
+  it("does not count the fixed alarm text", async () => {
+    runTriage.mockResolvedValue({ kind: "red_flag", message: "Acude a Urgencias." });
+    readUsage.mockResolvedValue(dayOf({ usadasDia: 7, usadasMes: 7 }));
+
+    const body = await (await post()).json();
+
+    expect(body.usage).toMatchObject({ dayUsed: 7, monthUsed: 7 });
+    expect(saveUsage).not.toHaveBeenCalled();
+  });
+
+  it("does not count a reply the AI failed to give", async () => {
+    runTriage.mockRejectedValue(new TriageUnavailableError("down"));
+
+    expect((await post()).status).toBe(502);
+    expect(saveUsage).not.toHaveBeenCalled();
+  });
+
+  it("still answers when the usage cannot be recorded", async () => {
+    saveUsage.mockRejectedValue(new Error("db down"));
+
+    const response = await post();
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject(question);
   });
 });
 

@@ -8,6 +8,7 @@ import { AnimatePresence, motion, type Variants } from "motion/react";
 import { LockPasswordIcon, Mail01Icon, UserIcon } from "@hugeicons/core-free-icons";
 import { buttonPrimary, buttonSoft } from "@/components/ui/buttons";
 import { duration, easing } from "@/design/motion";
+import { useT } from "@/i18n/I18nProvider";
 import { isValidBirthDate, type BirthDateError, type BirthDateInput } from "@/lib/birthdate";
 import { cn } from "@/lib/utils";
 import { AuthShell } from "./AuthShell";
@@ -20,29 +21,6 @@ import { focusRing } from "./styles";
 import { validateLogin, validateRegistro } from "./validation";
 
 export type AuthMode = "login" | "registro";
-
-const COPY = {
-  login: {
-    title: "Bienvenido de nuevo",
-    intro: "Entra para seguir con tu orientación.",
-    action: "Entrar",
-  },
-  registro: {
-    title: "Crea tu cuenta",
-    intro: "Empieza en minutos. Solo te pedimos lo necesario.",
-    action: "Crear mi cuenta",
-  },
-} as const;
-
-const GOOGLE_ERROR = "No pudimos entrar con Google. Intenta de nuevo.";
-
-const BIRTH_ERROR: Record<BirthDateError, string> = {
-  incomplete: "Elige el día, el mes y el año.",
-  invalid: "Esa fecha no existe. Revisa el día, el mes y el año.",
-  future: "Esa fecha todavía no ha llegado. Revisa el año.",
-  too_old: "Revisa el año. Debe ser de los últimos 120 años.",
-};
-
 
 const ease = [...easing.standard] as [number, number, number, number];
 
@@ -74,6 +52,7 @@ function Reveal({ children, id }: { children: React.ReactNode; id: string }) {
 }
 
 export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode; googleError?: boolean }) {
+  const t = useT();
   const router = useRouter();
   const dateErrorId = useId();
   const consentErrorId = useId();
@@ -89,7 +68,7 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
   const [acepta, setAcepta] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; acepta?: string }>({});
-  const [formError, setFormError] = useState<string | null>(googleError ? GOOGLE_ERROR : null);
+  const [formError, setFormError] = useState<string | null>(googleError ? t.auth.errors.google : null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [focused, setFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
@@ -102,7 +81,13 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
     year: birthDate ? birthDate.getFullYear() : null,
   };
   const birth = isValidBirthDate(input, today);
-  const birthError = isRegistro && !birth.valid && (submitted || Boolean(birthDate)) ? BIRTH_ERROR[birth.error] : null;
+  const birthMessages: Record<BirthDateError, string> = {
+    incomplete: t.auth.errors.birthIncomplete,
+    invalid: t.auth.errors.birthInvalid,
+    future: t.auth.errors.birthFuture,
+    too_old: t.auth.errors.birthTooOld,
+  };
+  const birthError = isRegistro && !birth.valid && (submitted || Boolean(birthDate)) ? birthMessages[birth.error] : null;
 
   function switchMode(next: AuthMode) {
     if (next === mode) return;
@@ -127,7 +112,9 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const found = isRegistro ? validateRegistro({ nombre, email, password, acepta }) : validateLogin(email, password);
+    const found = isRegistro
+      ? validateRegistro({ nombre, email, password, acepta }, t.auth.errors)
+      : validateLogin(email, password, t.auth.errors);
     flushSync(() => {
       setSubmitted(true);
       setErrors(found);
@@ -151,7 +138,7 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
       });
       if (!response.ok) {
         const body = (await response.json().catch(() => null)) as { error?: string; campo?: string } | null;
-        const message = body?.error ?? "No pudimos completar la acción. Intenta de nuevo.";
+        const message = body?.error ?? t.auth.errors.generic;
         if (body?.campo === "email") setErrors({ email: message });
         else setFormError(message);
         return;
@@ -159,7 +146,7 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
       router.push("/chat");
       router.refresh();
     } catch {
-      setFormError("No pudimos conectarnos. Revisa tu internet e intenta de nuevo.");
+      setFormError(t.auth.errors.network);
     } finally {
       setSubmitting(false);
     }
@@ -177,7 +164,7 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
             ? "success"
             : "idle";
 
-  const copy = COPY[mode];
+  const copy = mode === "login" ? t.auth.login : t.auth.signup;
 
   return (
     <AuthShell mascotState={mascotState}>
@@ -190,7 +177,7 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
         {/* Mode selector: the floating pill slides to the active option. */}
         <div
           role="tablist"
-          aria-label="Acceso"
+          aria-label={t.auth.tablistLabel}
           className="relative mb-6 grid grid-cols-2 rounded-lg bg-surface p-1.5 shadow-inset short:mb-4"
         >
           {(["login", "registro"] as const).map((tab) => (
@@ -213,7 +200,7 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
                   className="absolute inset-0 rounded-md bg-surface-raised shadow-soft"
                 />
               ) : null}
-              <span className="relative">{tab === "login" ? "Entrar" : "Crear cuenta"}</span>
+              <span className="relative">{tab === "login" ? t.auth.tabs.login : t.auth.tabs.signup}</span>
             </button>
           ))}
         </div>
@@ -243,7 +230,7 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
                 {isRegistro ? (
                   <Reveal id="nombre">
                     <TextField
-                      label="Nombre (opcional)"
+                      label={t.auth.fields.name}
                       name="nombre"
                       autoComplete="name"
                       leading={UserIcon}
@@ -257,7 +244,7 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
 
               <TextField
                 ref={emailRef}
-                label="Correo electrónico"
+                label={t.auth.fields.email}
                 name="email"
                 type="email"
                 autoComplete="email"
@@ -273,7 +260,7 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
               />
               <TextField
                 ref={passwordRef}
-                label="Contraseña"
+                label={t.auth.fields.password}
                 name="password"
                 type={passwordVisible ? "text" : "password"}
                 autoComplete={isRegistro ? "new-password" : "current-password"}
@@ -334,7 +321,7 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
                           aria-describedby={errors.acepta ? consentErrorId : undefined}
                           className={`mt-px size-5 shrink-0 cursor-pointer accent-[var(--accent)] ${focusRing}`}
                         />
-                        <span>Autorizo que Waylo guarde mis datos para crear mi cuenta. Solo se usan para eso.</span>
+                        <span>{t.auth.consent}</span>
                       </label>
                       {errors.acepta ? <FieldError id={consentErrorId}>{errors.acepta}</FieldError> : null}
                     </div>
@@ -364,7 +351,7 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
                   transition={{ duration: duration.base, ease }}
                   className="col-start-1 row-start-1"
                 >
-                  {submitting ? "Un momento…" : copy.action}
+                  {submitting ? t.auth.submitting : copy.action}
                 </motion.span>
               </AnimatePresence>
             </span>
@@ -373,7 +360,7 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
 
         <div className="my-4 flex items-center gap-4 short:my-2" aria-hidden>
           <span className="h-px flex-1 bg-border-strong/40" />
-          <span className="font-heading text-caption text-text-muted">o</span>
+          <span className="font-heading text-caption text-text-muted">{t.auth.or}</span>
           <span className="h-px flex-1 bg-border-strong/40" />
         </div>
 
@@ -382,17 +369,17 @@ export function AuthPanel({ initialMode, googleError }: { initialMode: AuthMode;
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
             <path fill="currentColor" d="M21.35 11.1H12v2.98h5.35c-.23 1.5-1.7 4.4-5.35 4.4a5.9 5.9 0 1 1 0-11.8c1.9 0 3.17.8 3.9 1.5l2.66-2.57C16.9 3.6 14.7 2.6 12 2.6a9.4 9.4 0 1 0 0 18.8c5.43 0 9-3.8 9-9.2 0-.62-.07-1.1-.15-1.1Z" />
           </svg>
-          Continuar con Google
+          {t.auth.google}
         </a>
 
         <p className="mt-4 text-center text-caption text-text-muted short:mt-2">
-          Al continuar aceptas la{" "}
+          {t.auth.legalLead}{" "}
           <Link href="/privacidad" className={cn("link-anim rounded-sm font-semibold text-text", focusRing)}>
-            Política de privacidad
+            {t.auth.privacyLink}
           </Link>{" "}
-          y los{" "}
+          {t.auth.legalAnd}{" "}
           <Link href="/terminos" className={cn("link-anim rounded-sm font-semibold text-text", focusRing)}>
-            Términos y condiciones
+            {t.auth.termsLink}
           </Link>
           .
         </p>

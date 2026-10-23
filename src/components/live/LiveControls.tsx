@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Cancel01Icon, Mic01Icon, MicOff01Icon } from "@hugeicons/core-free-icons";
 import { duration, easing } from "@/design/motion";
+import { useT } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 
 // A 1x1 circle with the same depth as the rest of the composer: raised at rest, lifted on hover.
@@ -40,7 +41,8 @@ interface LiveControlsProps {
 }
 
 export function LiveControls({ supported, active, muted, onStart, onStop, onToggleMute }: LiveControlsProps) {
-  const voiceLabel = active ? "Salir del modo voz" : "Iniciar voz";
+  const t = useT().live;
+  const voiceLabel = active ? t.exit : t.start;
 
   return (
     <div className="flex shrink-0 items-end">
@@ -61,8 +63,8 @@ export function LiveControls({ supported, active, muted, onStart, onStop, onTogg
                 type="button"
                 onClick={onToggleMute}
                 aria-pressed={muted}
-                aria-label={muted ? "Activar el micrófono" : "Silenciar el micrófono"}
-                title={muted ? "Activar el micrófono" : "Silenciar el micrófono"}
+                aria-label={muted ? t.unmute : t.mute}
+                title={muted ? t.unmute : t.mute}
                 className={cn(square, muted ? "bg-text text-surface shadow-solid" : "bg-surface-raised text-text shadow-soft hover:shadow-raised")}
               >
                 <AnimatePresence mode="wait" initial={false}>
@@ -82,7 +84,7 @@ export function LiveControls({ supported, active, muted, onStart, onStop, onTogg
         disabled={!supported}
         aria-pressed={active}
         aria-label={voiceLabel}
-        title={supported ? voiceLabel : "Tu navegador no permite usar la voz"}
+        title={supported ? voiceLabel : t.unsupportedTitle}
         className={cn(square, active ? "bg-accent text-accent-foreground shadow-solid" : "bg-surface-raised text-text shadow-soft hover:shadow-raised")}
       >
         <AnimatePresence mode="wait" initial={false}>

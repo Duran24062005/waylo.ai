@@ -6,15 +6,16 @@ import { ArrowRight02Icon, PlusSignIcon, StethoscopeIcon, UserIcon } from "@huge
 import { motion, useReducedMotion } from "motion/react";
 import { Mascot } from "@/components/mascot";
 import { duration, easing } from "@/design/motion";
+import { useT } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 
 const ease = [...easing.standard] as [number, number, number, number];
 
 // Same order and tones as the level badges: black, dark gray, mid gray.
 const LEVELS = [
-  { label: "Urgencias", icon: PlusSignIcon, tone: "bg-danger text-danger-foreground" },
-  { label: "Consulta Prioritaria", icon: StethoscopeIcon, tone: "bg-warning text-warning-foreground" },
-  { label: "Medicina General", icon: UserIcon, tone: "bg-success text-success-foreground" },
+  { id: "urgencias", icon: PlusSignIcon, tone: "bg-danger text-danger-foreground" },
+  { id: "prioritaria", icon: StethoscopeIcon, tone: "bg-warning text-warning-foreground" },
+  { id: "general", icon: UserIcon, tone: "bg-success text-success-foreground" },
 ] as const;
 
 function TypingBubble() {
@@ -41,6 +42,7 @@ function TypingBubble() {
 
 /** Right side of the hero: soft blob, the mascot "typing", and the three levels of care. */
 export function HeroScene({ chatHref }: { chatHref: string }) {
+  const t = useT();
   return (
     <div className="relative mx-auto aspect-[5/4] w-full max-w-[40rem] lg:max-w-none xl:aspect-auto xl:h-[min(36rem,64vh)]">
       {/* Background blob */}
@@ -55,7 +57,7 @@ export function HeroScene({ chatHref }: { chatHref: string }) {
       {/* Levels of care: behind the mascot, turned slightly to the left in 3D. */}
       <div className="absolute left-[44%] top-[14%] z-0 hidden w-[min(21rem,54%)] sm:block">
         <motion.nav
-          aria-label="Niveles de atención"
+          aria-label={t.home.levelsNav}
           initial={{ opacity: 0, x: 28 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: duration.slow, ease, delay: 0.3 }}
@@ -64,7 +66,7 @@ export function HeroScene({ chatHref }: { chatHref: string }) {
         >
         <ul className="flex flex-col gap-2.5">
           {LEVELS.map((level) => (
-            <li key={level.label}>
+            <li key={level.id}>
               <Link
                 href={chatHref}
                 className="lift lift-sm group flex items-center gap-3 rounded-xl bg-surface-raised px-3 py-3 shadow-soft focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
@@ -72,7 +74,7 @@ export function HeroScene({ chatHref }: { chatHref: string }) {
                 <span className={cn("inline-flex size-9 shrink-0 items-center justify-center rounded-full shadow-solid", level.tone)}>
                   <HugeiconsIcon icon={level.icon} size={18} strokeWidth={2.5} aria-hidden />
                 </span>
-                <span className="flex-1 font-heading text-sm font-medium text-text">{level.label}</span>
+                <span className="flex-1 font-heading text-sm font-medium text-text">{t.levels[level.id]}</span>
                 <HugeiconsIcon
                   icon={ArrowRight02Icon}
                   size={16}
@@ -94,7 +96,7 @@ export function HeroScene({ chatHref }: { chatHref: string }) {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: duration.slow, ease, delay: 0.15 }}
         >
-          <Mascot state="idle" size={360} label="Mascota de Waylo" className="h-auto w-full" />
+          <Mascot state="idle" size={360} label={t.home.mascotLabel} className="h-auto w-full" />
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 12, scale: 0.9 }}

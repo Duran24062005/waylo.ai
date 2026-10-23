@@ -3,6 +3,7 @@
 import { useEffect, useRef, type FormEvent, type KeyboardEvent } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowUp02Icon } from "@hugeicons/core-free-icons";
+import { useT } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 
 interface ChatInputProps {
@@ -17,6 +18,7 @@ interface ChatInputProps {
 const MAX_HEIGHT = 176;
 
 export function ChatInput({ value, pending, onChange, onSubmit, onFocus, onBlur }: ChatInputProps) {
+  const t = useT();
   const ref = useRef<HTMLTextAreaElement>(null);
   const canSend = value.trim().length > 0 && !pending;
 
@@ -74,7 +76,7 @@ export function ChatInput({ value, pending, onChange, onSubmit, onFocus, onBlur 
           )}
         />
         <label className="sr-only" htmlFor="mensaje">
-          Escribe cómo te sientes
+          {t.chat.inputLabel}
         </label>
         <textarea
           ref={ref}
@@ -85,7 +87,7 @@ export function ChatInput({ value, pending, onChange, onSubmit, onFocus, onBlur 
           onKeyDown={onKeyDown}
           onFocus={onFocus}
           onBlur={onBlur}
-          placeholder="Cuéntame qué sientes…"
+          placeholder={t.chat.placeholder}
           autoComplete="off"
           enterKeyHint="send"
           className="relative max-h-44 min-h-10 min-w-0 flex-1 resize-none bg-transparent py-2 text-base text-text outline-none placeholder:text-text-muted"
@@ -93,7 +95,7 @@ export function ChatInput({ value, pending, onChange, onSubmit, onFocus, onBlur 
         <button
           type="submit"
           disabled={!canSend}
-          aria-label="Enviar mensaje"
+          aria-label={t.chat.send}
           className={cn(
             "relative inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground",
             "lift lift-sm transition-opacity",

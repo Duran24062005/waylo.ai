@@ -2,6 +2,8 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { MotionConfig, motion } from "motion/react";
+import { useI18n } from "@/i18n/I18nProvider";
+import type { Locale } from "@/i18n/locales";
 import {
   ChatHeader,
   ChatInput,
@@ -10,6 +12,7 @@ import {
   GuestLimitNotice,
   MessageList,
 } from "@/components/chat";
+import { UsageLimitNotice } from "@/components/chat/UsageLimitNotice";
 import { LiveControls, LiveStage, MASCOT_STATE, useLiveVoice } from "@/components/live";
 import type { MascotState } from "@/components/mascot";
 import { ScrollEdge } from "@/components/chat/ScrollEdge";
@@ -27,16 +30,11 @@ import {
   writeConversations,
 } from "@/lib/conversations";
 import { orientationNote } from "@/lib/orientation-note";
-import type { ChatMessage, Conversation, GuestUsage, TriageResponse } from "@/lib/types";
+import type { AccountUsage, ChatMessage, Conversation, GuestUsage, TriageResponse } from "@/lib/types";
 
-const WELCOME: ChatMessage = {
-  id: "welcome",
-  role: "assistant",
-  content:
-    "Hola. Te ayudo a saber a qué nivel de atención acudir. No doy diagnósticos ni recetas. Si te falta el aire, duele el pecho o te sientes muy mal, ve ya a Urgencias.",
-};
+// The empty chat starts with this marker message. It is never shown or sent: the greeting on screen is its own component.
+const WELCOME: ChatMessage = { id: "welcome", role: "assistant", content: "" };
 
-const FAILURE_TEXT = "No pude completar la orientación. Si te sientes mal, busca atención médica.";
 const SPEAKING_MS = 2400;
 const MIN_THINKING_MS = 2500;
 
@@ -48,6 +46,13 @@ function wait(ms: number) {
 class GuestLimitError extends Error {
   constructor(readonly guest?: GuestUsage) {
     super("guest_limit");
+  }
+}
+
+/** The server refused the request because the account used up its daily or monthly replies. */
+class UsageLimitError extends Error {
+  constructor(readonly usage?: AccountUsage) {
+    super("usage_limit");
   }
 }
 
@@ -66,9 +71,12 @@ interface ChatAppProps {
   userId?: string | null;
   /** Only for visitors without an account: how many free replies they have used. */
   guest?: GuestUsage;
+  /** Only for signed-in accounts: the daily and monthly replies used, and the wait if they ran out. */
+  usage?: AccountUsage;
 }
 
-export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
+export function ChatApp({ nombre, userId, guest, usage: initialUsage }: ChatAppProps) {
+  const { t } = useI18n();
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
@@ -81,6 +89,7 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
   // When the free replies come back, once they are used up.
   const [guestResetAt, setGuestResetAt] = useState(guest?.resetAt);
   const [limitAttempted, setLimitAttempted] = useState(false);
+  const [usage, setUsage] = useState(initialUsage);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState(() => crypto.randomUUID());
   // Bumped on reset so a request still waiting for its minimum time can't write into the new chat.
@@ -109,13 +118,37 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
   }, [waitLeft]);
 
   const limitReached = Boolean(guest) && guestUsed >= (guest?.limit ?? Infinity);
+
+  // A signed-in account that used its daily or monthly replies waits too, and gets them back on screen when it ends.
+  useEffect(() => setUsage(initialUsage), [initialUsage]);
+  const blocked = usage?.blocked ?? null;
+  const blockLeft = useRemaining(blocked?.resetAt);
+  useEffect(() => {
+    if (blockLeft !== 0) return;
+    setUsage((current) =>
+      current && current.blocked
+        ? {
+            ...current,
+            blocked: null,
+            dayUsed: current.blocked.scope === "day" ? 0 : current.dayUsed,
+            monthUsed: current.blocked.scope === "month" ? 0 : current.monthUsed,
+          }
+        : current,
+    );
+    setLimitAttempted(false);
+  }, [blockLeft]);
+  const accountBlocked = Boolean(blocked) && blockLeft !== 0;
+
   // The patient can always type. The notice shows once they start writing or try to send.
   const showLimit = limitReached && (draft.trim().length > 0 || limitAttempted);
+  const showUsageLimit = accountBlocked && (draft.trim().length > 0 || limitAttempted);
 
   // What the patient says is sent exactly like typed text, so both get the same kind of answer.
-  const live = useLiveVoice({ onUtterance: send, busy: pending });
+  const live = useLiveVoice({ onUtterance: (text, language) => send(text, language ?? undefined), busy: pending });
   const { active: liveActive, speak: speakReply, silence: silenceVoice, stop: stopLive } = live;
   const spokenId = useRef("welcome");
+  // The language of the latest reply, so it is read aloud in it (a Live conversation in another language).
+  const replyLanguage = useRef<Locale | undefined>(undefined);
 
   // Turning the voice on must not read the earlier conversation aloud.
   useEffect(() => {
@@ -128,7 +161,7 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
     const last = messages[messages.length - 1];
     if (!liveActive || last.role !== "assistant" || last.id === spokenId.current) return;
     spokenId.current = last.id;
-    if (!errorIds.includes(last.id)) speakReply(last.content);
+    if (!errorIds.includes(last.id)) speakReply(last.content, replyLanguage.current);
   }, [liveActive, messages, errorIds, speakReply]);
 
   useEffect(() => {
@@ -206,7 +239,8 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
     }
   }
 
-  async function request(history: ChatMessage[], avoid?: string) {
+  async function request(history: ChatMessage[], avoid?: string, language?: Locale) {
+    replyLanguage.current = language;
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
     setPending(true);
@@ -219,6 +253,8 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
       body: JSON.stringify({
         // Only set when redoing a reply: it tells the AI which answer to say differently.
         avoid,
+        // Only set when the patient spoke in a language: the reply comes back in it.
+        lang: language,
         messages: history
           .filter((message) => message.id !== "welcome" && !errorIds.includes(message.id))
           // The model never sees the card, so it gets a note about the orientation it already gave.
@@ -229,7 +265,8 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
       }),
     }).then(async (response) => {
       if (response.status === 403) {
-        const body = (await response.json().catch(() => null)) as { guest?: GuestUsage } | null;
+        const body = (await response.json().catch(() => null)) as { error?: string; guest?: GuestUsage; usage?: AccountUsage } | null;
+        if (body?.error === "usage_limit") throw new UsageLimitError(body.usage);
         throw new GuestLimitError(body?.guest);
       }
       if (!response.ok) throw new Error("triage failed");
@@ -250,10 +287,18 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
         setGuestUsed(data.guest.used);
         setGuestResetAt(data.guest.resetAt);
       }
+      if (data.usage) setUsage(data.usage);
       setResult(data);
       setMessages((current) => [...current, { id: replyId, role: "assistant", content: data.message, card: data.card }]);
       if (data.kind === "red_flag") setAlertIds((current) => [...current, replyId]);
       setSpeaking(true);
+    } else if (outcome.reason instanceof UsageLimitError) {
+      // The account ran out of replies. The message was not answered, so it goes back to the input.
+      const unanswered = history[history.length - 1];
+      if (outcome.reason.usage) setUsage(outcome.reason.usage);
+      setMessages(history.slice(0, -1));
+      if (unanswered?.role === "user") setDraft(unanswered.content);
+      setLimitAttempted(true);
     } else if (outcome.reason instanceof GuestLimitError) {
       // The server's count wins over the screen's. The message was not answered, so it goes back to the input.
       const unanswered = history[history.length - 1];
@@ -264,17 +309,17 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
       setLimitAttempted(true);
     } else {
       const failureId = crypto.randomUUID();
-      setMessages((current) => [...current, { id: failureId, role: "assistant", content: FAILURE_TEXT }]);
+      setMessages((current) => [...current, { id: failureId, role: "assistant", content: t.chat.failure }]);
       setErrorIds((current) => [...current, failureId]);
     }
     setPending(false);
   }
 
-  function send(text: string) {
+  function send(text: string, language?: Locale) {
     const content = text.trim();
     if (!content || pending) return;
 
-    if (limitReached) {
+    if (limitReached || accountBlocked) {
       // Nothing is sent. The voice mode ends so the notice with the sign-in button can be seen.
       setLimitAttempted(true);
       if (liveActive) stopLive();
@@ -285,7 +330,7 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
     const nextMessages = [...messages, { id: crypto.randomUUID(), role: "user" as const, content }];
     setMessages(nextMessages);
     setDraft("");
-    void request(nextMessages);
+    void request(nextMessages, undefined, language);
     if (isFirstMessage) void requestTitle(activeId, content);
   }
 
@@ -300,7 +345,7 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
 
   function regenerate(assistantId: string) {
     if (pending) return;
-    if (limitReached) {
+    if (limitReached || accountBlocked) {
       setLimitAttempted(true);
       return;
     }
@@ -418,7 +463,7 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
           <div className="relative flex min-h-0 flex-1 flex-col">
             {liveActive ? (
               <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-end px-4 pb-6 sm:px-8">
-                <LiveStage phase={live.phase} levelRef={live.levelRef} notice={failed ? FAILURE_TEXT : live.notice} />
+                <LiveStage phase={live.phase} levelRef={live.levelRef} notice={failed ? t.chat.failure : live.notice} />
               </div>
             ) : started ? (
               <SmoothScrollArea
@@ -446,6 +491,9 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
           {/* Glides between the middle of the screen and the bottom as the layout changes. */}
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 pt-2 sm:px-8">
             {showLimit && <GuestLimitNotice waitMs={waitLeft} />}
+            {showUsageLimit && blocked && (
+              <UsageLimitNotice scope={blocked.scope} resetAt={blocked.resetAt} waitMs={blockLeft} />
+            )}
             {live.error && !liveActive && (
               <p role="alert" className="text-center text-sm text-text-muted">
                 {live.error}
@@ -484,7 +532,7 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
           {centered && <div aria-hidden className="min-h-0 flex-1" />}
 
           <p className="mx-auto mt-4 w-full max-w-5xl px-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-center text-sm text-text-muted sm:px-8">
-            Waylo orienta, no diagnostica ni receta. Si te sientes muy mal, ve a Urgencias.
+            {t.chat.disclaimer}
           </p>
         </div>
       </div>

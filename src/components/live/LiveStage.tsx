@@ -4,6 +4,7 @@ import type { MutableRefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Mascot, type MascotState } from "@/components/mascot";
 import { duration, easing } from "@/design/motion";
+import { useT } from "@/i18n/I18nProvider";
 import { VoiceHalo } from "./VoiceHalo";
 import type { LivePhase } from "./useLiveVoice";
 
@@ -18,26 +19,6 @@ export const MASCOT_STATE: Record<LivePhase, MascotState> = {
   error: "error",
 };
 
-export const PHASE_LABEL: Record<LivePhase, string> = {
-  off: "",
-  waiting: "Esperando…",
-  listening: "Escuchando…",
-  thinking: "Pensando…",
-  speaking: "Respondiendo…",
-  muted: "Micrófono silenciado",
-  error: "No pude escucharte",
-};
-
-const PHASE_HINT: Record<LivePhase, string> = {
-  off: "",
-  waiting: "Háblame o escribe abajo.",
-  listening: "Te escucho con atención.",
-  thinking: "Estoy preparando mi respuesta.",
-  speaking: "Puedes escribir mientras tanto.",
-  muted: "Activa el micrófono para hablar, o escribe abajo.",
-  error: "Revisa el micrófono o escribe abajo.",
-};
-
 interface LiveStageProps {
   phase: LivePhase;
   levelRef: MutableRefObject<number>;
@@ -47,6 +28,9 @@ interface LiveStageProps {
 
 /** The mascot and its state while the voice mode is on. The transcript stays hidden until the mode is closed. */
 export function LiveStage({ phase, levelRef, notice }: LiveStageProps) {
+  const t = useT().live;
+  const label = phase === "off" ? "" : t.phases[phase];
+  const hint = phase === "off" ? "" : t.hints[phase];
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.85, y: 12 }}
@@ -56,7 +40,7 @@ export function LiveStage({ phase, levelRef, notice }: LiveStageProps) {
       className="flex flex-col items-center gap-4 text-center"
       role="status"
       aria-live="polite"
-      aria-label="Estado de la voz"
+      aria-label={t.stageLabel}
     >
       <VoiceHalo phase={phase} levelRef={levelRef} size={176}>
         <Mascot state={MASCOT_STATE[phase]} size={176} />
@@ -73,11 +57,11 @@ export function LiveStage({ phase, levelRef, notice }: LiveStageProps) {
               transition={{ duration: duration.base, ease: easing.standard }}
               className="font-heading text-title font-medium text-text"
             >
-              {PHASE_LABEL[phase]}
+              {label}
             </motion.p>
           </AnimatePresence>
         </div>
-        <p className="text-sm text-text-muted">{notice ?? PHASE_HINT[phase]}</p>
+        <p className="text-sm text-text-muted">{notice ?? hint}</p>
       </div>
     </motion.div>
   );

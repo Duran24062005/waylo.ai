@@ -7,6 +7,8 @@ import { Mascot, type MascotState } from "@/components/mascot";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { SmoothScrollArea } from "@/components/SmoothScrollArea";
 import { ThemeToggle } from "@/components/theme";
+import { SettingsLink } from "./SettingsLink";
+import { useT } from "@/i18n/I18nProvider";
 import { buttonSoft } from "@/components/ui/buttons";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/lib/types";
@@ -46,6 +48,7 @@ export function ChatSidebar({
   onTogglePinConversation,
   onDeleteConversation,
 }: ChatSidebarProps) {
+  const t = useT();
   return (
     <aside className="hidden w-80 shrink-0 flex-col gap-8 bg-surface-raised p-8 shadow-raised lg:flex xl:w-96">
       <div className="flex items-center justify-between gap-3">
@@ -55,7 +58,10 @@ export function ChatSidebar({
         >
           Waylo
         </Link>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <SettingsLink />
+          <ThemeToggle />
+        </div>
       </div>
 
       <div className="flex flex-col items-center gap-5 text-center">
@@ -65,12 +71,12 @@ export function ChatSidebar({
 
       <button type="button" onClick={onReset} className={cn(buttonSoft, "w-full")}>
         <HugeiconsIcon icon={Add01Icon} size={20} strokeWidth={2.25} aria-hidden />
-        Nueva conversación
+        {t.chat.newConversation}
       </button>
 
       {/* Takes the free height and scrolls, so many conversations never push the profile off screen. */}
       <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <h2 className="font-heading text-sm font-semibold text-text">Conversaciones</h2>
+        <h2 className="font-heading text-sm font-semibold text-text">{t.chat.conversations}</h2>
         {/* The padding (undone by the negative margin) leaves room for the rename field's halo, which a scroll area would clip. */}
         <SmoothScrollArea className="scroll-soft -m-2 min-h-0 flex-1 overflow-y-auto p-2">
           <ConversationList

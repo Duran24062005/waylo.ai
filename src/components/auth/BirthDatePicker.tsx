@@ -4,12 +4,12 @@ import { useId, useState } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowDown01Icon, Calendar03Icon } from "@hugeicons/core-free-icons";
+import { useI18n } from "@/i18n/I18nProvider";
+import { FORMAT_LOCALE } from "@/i18n/locales";
 import { MAX_AGE_YEARS } from "@/lib/birthdate";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { controlClasses } from "./styles";
-
-const formatter = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "long", year: "numeric" });
 
 interface BirthDatePickerProps {
   value: Date | undefined;
@@ -23,7 +23,9 @@ interface BirthDatePickerProps {
 /** Field-like trigger that opens a calendar with month and year menus, so a birth year is two clicks away. */
 export function BirthDatePicker({ value, onChange, today, invalid, describedBy, onOpenChange }: BirthDatePickerProps) {
   const labelId = useId();
+  const { locale, t } = useI18n();
   const [open, setOpen] = useState(false);
+  const formatter = new Intl.DateTimeFormat(FORMAT_LOCALE[locale], { day: "numeric", month: "long", year: "numeric" });
 
   const setOpenState = (next: boolean) => {
     setOpen(next);
@@ -33,7 +35,7 @@ export function BirthDatePicker({ value, onChange, today, invalid, describedBy, 
   return (
     <div className="flex flex-col gap-1.5">
       <span id={labelId} className="font-heading text-sm font-medium text-text">
-        Fecha de nacimiento
+        {t.auth.fields.birthDate}
       </span>
       <Popover.Root open={open} onOpenChange={setOpenState}>
         <Popover.Trigger
@@ -44,7 +46,7 @@ export function BirthDatePicker({ value, onChange, today, invalid, describedBy, 
         >
           <HugeiconsIcon icon={Calendar03Icon} size={20} strokeWidth={2} aria-hidden className="shrink-0 text-text-muted" />
           <span className={cn("flex-1 truncate", !value && "text-text-muted")}>
-            {value ? formatter.format(value) : "Elige tu fecha"}
+            {value ? formatter.format(value) : t.auth.fields.pickDate}
           </span>
           <HugeiconsIcon
             icon={ArrowDown01Icon}

@@ -5,8 +5,12 @@ import { ArrowDown01Icon, ArrowLeft01Icon, ArrowRight01Icon, Tick02Icon } from "
 import * as Select from "@radix-ui/react-select";
 import type { ChangeEvent } from "react";
 import { DayPicker, type DayPickerProps, type DropdownProps } from "react-day-picker";
-import { es } from "react-day-picker/locale";
+import { enUS, es, ptBR } from "react-day-picker/locale";
+import { useI18n } from "@/i18n/I18nProvider";
+import type { Locale } from "@/i18n/locales";
 import { cn } from "@/lib/utils";
+
+const DAY_PICKER_LOCALE: Record<Locale, typeof es> = { es, en: enUS, pt: ptBR };
 
 const navButton = cn(
   "lift lift-sm pointer-events-auto inline-flex size-9 items-center justify-center rounded-md bg-surface-raised text-text shadow-soft",
@@ -82,11 +86,12 @@ function CalendarDropdown({ options = [], value, onChange, "aria-label": ariaLab
   );
 }
 
-/** shadcn-style calendar on react-day-picker, in the Waylo palette. Spanish by default. */
+/** shadcn-style calendar on react-day-picker, in the Waylo palette and the app's language. */
 export function Calendar({ className, classNames, ...props }: DayPickerProps) {
+  const { locale } = useI18n();
   return (
     <DayPicker
-      locale={es}
+      locale={DAY_PICKER_LOCALE[locale]}
       showOutsideDays
       className={cn("select-none p-1", className)}
       classNames={{

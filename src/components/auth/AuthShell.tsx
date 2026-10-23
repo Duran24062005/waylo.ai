@@ -4,6 +4,7 @@ import { MotionConfig } from "motion/react";
 import Link from "next/link";
 import { Mascot, type MascotState } from "@/components/mascot";
 import { ThemeToggle } from "@/components/theme";
+import { useT } from "@/i18n/I18nProvider";
 import { focusRing } from "./styles";
 
 export interface AuthShellProps {
@@ -13,6 +14,7 @@ export interface AuthShellProps {
 
 /** Page frame: brand panel on the left (large screens), the access card on the right. */
 export function AuthShell({ mascotState, children }: AuthShellProps) {
+  const t = useT();
   return (
     <MotionConfig reducedMotion="user">
       <div className="flex min-h-dvh flex-col bg-surface text-text lg:flex-row">
@@ -23,10 +25,10 @@ export function AuthShell({ mascotState, children }: AuthShellProps) {
           <div className="flex flex-col items-center gap-8 text-center">
             <Mascot state={mascotState} size={288} />
             <p className="max-w-md font-heading text-headline font-medium text-text">
-              Te ayudamos a saber a dónde ir cuando algo te duele.
+              {t.auth.tagline}
             </p>
           </div>
-          <p className="text-caption text-text-muted">Waylo orienta. No diagnostica ni receta.</p>
+          <p className="text-caption text-text-muted">{t.auth.footnote}</p>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">

@@ -7,7 +7,7 @@ import { gatewayConfig } from "@/lib/gateway";
 const TITLE_MODEL = "grok-4.20-0309-non-reasoning";
 
 const TITLE_PROMPT =
-  "Resume en un título de 2 a 5 palabras, en español, el motivo de consulta del mensaje de un paciente. " +
+  "Resume en un título de 2 a 5 palabras el motivo de consulta del mensaje de un paciente, en el mismo idioma del mensaje. " +
   "No uses comillas ni punto final. No des consejos ni diagnósticos. Responde solo con el título.";
 
 /** A short title for a conversation, from its first message. Null when the AI cannot provide one. */

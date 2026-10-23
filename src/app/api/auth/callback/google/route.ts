@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSql } from "@/lib/db";
 import { googleConfig, OAUTH_STATE_COOKIE } from "@/lib/google";
+import { applyAccountPreferences, saveDevicePreferences, type SavedPreferences } from "@/lib/preferences-server";
 import { startSession } from "@/lib/session";
 
 interface GoogleProfile {
@@ -53,12 +54,14 @@ export async function GET(request: Request) {
     const sql = getSql();
 
     const found = (await sql`
-      select id, nombre from personas where google_id = ${profile.sub} or lower(email) = ${email} limit 1
-    `) as { id: string; nombre: string }[];
+      select id, nombre, idioma, voz, idioma_live from personas where google_id = ${profile.sub} or lower(email) = ${email} limit 1
+    `) as ({ id: string; nombre: string } & SavedPreferences)[];
 
-    let person = found[0];
-    if (person) {
+    let person: { id: string; nombre: string };
+    if (found[0]) {
+      person = found[0];
       await sql`update personas set google_id = ${profile.sub} where id = ${person.id} and google_id is null`;
+      await applyAccountPreferences(found[0]);
     } else {
       // Continuing with Google accepts the privacy notice shown on the access screen.
       const created = (await sql`
@@ -67,9 +70,10 @@ export async function GET(request: Request) {
         returning id, nombre
       `) as { id: string; nombre: string }[];
       person = created[0];
+      await saveDevicePreferences(person.id);
     }
 
-    await startSession({ id: person.id, nombre: person.nombre });
+    await startSession(person.id);
     const response = NextResponse.redirect(new URL("/chat", request.url));
     response.cookies.delete(OAUTH_STATE_COOKIE);
     return response;

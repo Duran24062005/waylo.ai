@@ -7,6 +7,7 @@ import { OrientationCard } from "@/components/OrientationCard";
 import { useSmoothScroll } from "@/components/SmoothScrollArea";
 import { buttonSoft } from "@/components/ui/buttons";
 import { duration, easing } from "@/design/motion";
+import { useT } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/lib/types";
 import { MessageActions } from "./MessageActions";
@@ -52,6 +53,7 @@ interface AssistantTextProps {
 }
 
 function AssistantText({ message, animate, isAlert, isError, isLastError, pending, onRetry, onRegenerate }: AssistantTextProps) {
+  const t = useT();
   const [done, setDone] = useState(!animate);
   const smoothScroll = useSmoothScroll();
   const showCard = Boolean(message.card) && done;
@@ -88,7 +90,7 @@ function AssistantText({ message, animate, isAlert, isError, isLastError, pendin
       {isError ? (
         isLastError && onRetry && !pending ? (
           <button type="button" onClick={onRetry} className={cn(buttonSoft, "mt-2 min-h-11 px-5 text-base")}>
-            Intentar de nuevo
+            {t.chat.tryAgain}
           </button>
         ) : null
       ) : (
@@ -110,6 +112,7 @@ export function MessageList({
   onRetry,
   onRegenerate,
 }: MessageListProps) {
+  const t = useT();
   const smoothScroll = useSmoothScroll();
   // Replies present on mount show at once; only later ones are typed.
   const initialIds = useRef(new Set(messages.map((message) => message.id)));
@@ -124,7 +127,7 @@ export function MessageList({
   const lastErrorId = errorMessageIds[errorMessageIds.length - 1];
 
   return (
-    <section aria-live="polite" aria-label="Conversación" className="flex flex-col gap-8 py-8">
+    <section aria-live="polite" aria-label={t.chat.conversationRegion} className="flex flex-col gap-8 py-8">
       <AnimatePresence initial={false}>
         {messages.map((message) => {
           const isUser = message.role === "user";

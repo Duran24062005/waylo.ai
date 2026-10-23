@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Delete02Icon, Edit02Icon, MoreVerticalIcon, PinIcon, PinOffIcon } from "@hugeicons/core-free-icons";
 import { duration, easing } from "@/design/motion";
+import { useT } from "@/i18n/I18nProvider";
 import { TITLE_MAX_CHARS } from "@/lib/conversations";
 import { cn } from "@/lib/utils";
 import type { Conversation } from "@/lib/types";
@@ -63,6 +64,7 @@ function RowTitle({ text, animate }: { text: string; animate: boolean }) {
 
 /** The title as a field, with a counter. Enter or leaving the field saves; Escape cancels. */
 function RenameField({ initial, onCommit, onCancel }: { initial: string; onCommit: (title: string) => void; onCancel: () => void }) {
+  const t = useT();
   const [value, setValue] = useState(initial);
   const input = useRef<HTMLInputElement>(null);
   // Enter and the blur that follows it must not save twice.
@@ -99,7 +101,7 @@ function RenameField({ initial, onCommit, onCancel }: { initial: string; onCommi
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={onKeyDown}
         onBlur={() => finish(true)}
-        aria-label="Nuevo nombre de la conversación"
+        aria-label={t.chat.renameLabel}
         className="w-full rounded-xl bg-surface px-3 py-2.5 text-sm text-text shadow-inset outline-none field-focus"
       />
       <p
@@ -107,7 +109,7 @@ function RenameField({ initial, onCommit, onCancel }: { initial: string; onCommi
         className={cn("mt-1 px-1 text-right text-xs", value.length >= TITLE_MAX_CHARS ? "text-text" : "text-text-muted")}
       >
         {value.length}/{TITLE_MAX_CHARS}
-        {value.length >= TITLE_MAX_CHARS && " · límite alcanzado"}
+        {value.length >= TITLE_MAX_CHARS && ` · ${t.chat.limitReached}`}
       </p>
     </div>
   );
@@ -115,6 +117,7 @@ function RenameField({ initial, onCommit, onCancel }: { initial: string; onCommi
 
 /** Saved conversations, pinned first and then newest. They stay for a week, and fifteen at most. */
 export function ConversationList({ conversations, activeId, onOpen, onRename, onTogglePin, onDelete }: ConversationListProps) {
+  const t = useT();
   const [menuId, setMenuId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   // After choosing "Renombrar" the focus belongs to the field, not back to the three dots.
@@ -154,7 +157,7 @@ export function ConversationList({ conversations, activeId, onOpen, onRename, on
             exit={{ opacity: 0, transition: { duration: duration.fast } }}
             className="text-sm text-text-muted"
           >
-            Tus conversaciones aparecerán aquí durante 7 días.
+            {t.chat.conversationsEmpty}
           </motion.p>
         )}
       </AnimatePresence>
@@ -212,7 +215,7 @@ export function ConversationList({ conversations, activeId, onOpen, onRename, on
                             transition={{ duration: duration.base, ease: easing.standard }}
                             className="grid shrink-0 place-items-center"
                           >
-                            <HugeiconsIcon icon={PinIcon} size={13} strokeWidth={2.25} aria-label="Fijada" />
+                            <HugeiconsIcon icon={PinIcon} size={13} strokeWidth={2.25} aria-label={t.chat.pinned} />
                           </motion.span>
                         )}
                       </AnimatePresence>
@@ -223,7 +226,7 @@ export function ConversationList({ conversations, activeId, onOpen, onRename, on
                       <Popover.Trigger asChild>
                         <button
                           type="button"
-                          aria-label={`Opciones de la conversación ${conversation.title}`}
+                          aria-label={t.chat.optionsFor(conversation.title)}
                           aria-haspopup="menu"
                           className={cn(
                             "absolute right-1.5 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-full text-text-muted",
@@ -239,7 +242,7 @@ export function ConversationList({ conversations, activeId, onOpen, onRename, on
                       <Popover.Portal>
                         <Popover.Content
                           role="menu"
-                          aria-label={`Opciones de ${conversation.title}`}
+                          aria-label={t.chat.menuFor(conversation.title)}
                           align="end"
                           sideOffset={4}
                           collisionPadding={12}
@@ -252,11 +255,11 @@ export function ConversationList({ conversations, activeId, onOpen, onRename, on
                         >
                           <button type="button" role="menuitem" className={menuItem} onClick={() => choose(() => setRenamingId(conversation.id), true)}>
                             <HugeiconsIcon icon={Edit02Icon} size={17} strokeWidth={2} aria-hidden />
-                            Renombrar
+                            {t.chat.rename}
                           </button>
                           <button type="button" role="menuitem" className={menuItem} onClick={() => choose(() => onTogglePin(conversation.id))}>
                             <HugeiconsIcon icon={conversation.pinned ? PinOffIcon : PinIcon} size={17} strokeWidth={2} aria-hidden />
-                            {conversation.pinned ? "Desfijar" : "Fijar"}
+                            {conversation.pinned ? t.chat.unpin : t.chat.pin}
                           </button>
                           {/* A faint line keeps the destructive option apart from the other two. */}
                           <div role="separator" className="mx-2 my-1.5 h-px bg-text/10" />
@@ -267,7 +270,7 @@ export function ConversationList({ conversations, activeId, onOpen, onRename, on
                             onClick={() => choose(() => onDelete(conversation.id))}
                           >
                             <HugeiconsIcon icon={Delete02Icon} size={17} strokeWidth={2} aria-hidden />
-                            Eliminar
+                            {t.chat.delete}
                           </button>
                         </Popover.Content>
                       </Popover.Portal>

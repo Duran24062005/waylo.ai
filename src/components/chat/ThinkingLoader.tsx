@@ -2,12 +2,14 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import { MascotMark } from "@/components/mascot";
+import { useT } from "@/i18n/I18nProvider";
 
 // Same mechanics as Kokonut's AI text loading: a shimmering gradient sweeps across the label,
 // clipped to the glyphs. The base color stays readable in both themes.
 const SWEEP = ["100% 50%", "0% 50%"];
 
 export function ThinkingLoader() {
+  const t = useT();
   const reduced = useReducedMotion();
 
   return (
@@ -20,7 +22,7 @@ export function ThinkingLoader() {
         animate={reduced ? undefined : { backgroundPosition: SWEEP }}
         transition={{ duration: 2.2, ease: "linear", repeat: Infinity }}
       >
-        Pensando
+        {t.chat.thinking}
       </motion.span>
     </div>
   );

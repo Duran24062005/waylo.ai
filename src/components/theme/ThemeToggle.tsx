@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { MoonIcon, SunIcon } from "@hugeicons/core-free-icons";
+import { useT } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import { useTheme } from "./ThemeProvider";
 
@@ -16,6 +17,7 @@ const ICON_BASE =
 
 /** Square (1:1) button. The current theme is in the accessible name, since there is no visible text. */
 export function ThemeToggle({ className }: ThemeToggleProps) {
+  const t = useT();
   const { resolvedTheme, setPreference } = useTheme();
   // The server renders "light"; the real theme arrives after hydration. Skip animating that first correction.
   const [ready, setReady] = useState(false);
@@ -29,8 +31,8 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
     <button
       type="button"
       onClick={() => setPreference(isDark ? "light" : "dark")}
-      aria-label={`Cambiar tema claro u oscuro. Ahora: ${isDark ? "oscuro" : "claro"}`}
-      title="Cambiar tema claro u oscuro"
+      aria-label={t.theme.toggleLabel(isDark)}
+      title={t.theme.toggleTitle}
       className={cn(
         "lift lift-sm group relative inline-block size-12 shrink-0 rounded-xl bg-surface-raised text-text shadow-soft",
         "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",

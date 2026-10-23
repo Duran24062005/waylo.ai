@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Copy01Icon, Refresh01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
+import { useT } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 
 const COPIED_MS = 1500;
@@ -22,6 +23,7 @@ interface MessageActionsProps {
 
 /** Shown on hover or focus inside the message, always on touch screens. */
 export function MessageActions({ text, onRegenerate, hidden, className }: MessageActionsProps) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
   const timer = useRef<number | undefined>(undefined);
 
@@ -49,12 +51,12 @@ export function MessageActions({ text, onRegenerate, hidden, className }: Messag
     >
       <button type="button" onClick={copy} className={actionButton}>
         <HugeiconsIcon icon={copied ? Tick02Icon : Copy01Icon} size={16} strokeWidth={2} aria-hidden />
-        <span aria-live="polite">{copied ? "Copiado" : "Copiar"}</span>
+        <span aria-live="polite">{copied ? t.chat.copied : t.chat.copy}</span>
       </button>
       {onRegenerate && (
         <button type="button" onClick={onRegenerate} className={actionButton}>
           <HugeiconsIcon icon={Refresh01Icon} size={16} strokeWidth={2} aria-hidden />
-          Reintentar
+          {t.chat.retry}
         </button>
       )}
     </div>

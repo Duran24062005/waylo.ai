@@ -1,17 +1,13 @@
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
+import type { Locale } from "@/i18n/locales";
+import { messages } from "@/i18n/messages";
 import { ORIENTATION_MARK } from "@/lib/orientation-note";
-import { detectRedFlag, RED_FLAG_MESSAGE } from "@/lib/red-flags";
+import { detectRedFlag, redFlagMessage } from "@/lib/red-flags";
 import { findProviders } from "@/lib/providers";
-import { LEGAL_DISCLAIMER, SYSTEM_PROMPT } from "@/lib/system-prompt";
+import { SYSTEM_PROMPT } from "@/lib/system-prompt";
 import type { CareLevel, ChatMessage, OrientationCard, TriageResponse } from "@/lib/types";
-
-const LEVEL_LABEL: Record<CareLevel, string> = {
-  urgencias: "Urgencias",
-  prioritaria: "Consulta Prioritaria",
-  general: "Medicina General",
-};
 
 const DEFAULT_BASE_URL = "https://api.reto.pltk.mx/v1";
 // Non-reasoning: answers in about 1-2 s. grok-4.6 reasons first and takes 12-18 s per turn.
@@ -21,13 +17,6 @@ const DEFAULT_MODEL = "grok-4.20-0309-non-reasoning";
 const MAX_QUESTION_TURNS = 5;
 // A reply that is not JSON is only kept as the model's own message when it is this short.
 const MAX_PLAIN_REPLY = 600;
-
-const DEFAULT_CHECKLIST = [
-  "Documento de identidad",
-  "Carné o app de afiliación",
-  "Exámenes previos, si los tienes",
-  "Orden o autorización, si tu EPS la pide",
-];
 
 const llmSchema = z.object({
   mensaje: z.string().optional(),
@@ -39,6 +28,10 @@ const llmSchema = z.object({
 
 export interface TriageInput {
   messages: Pick<ChatMessage, "role" | "content">[];
+  /** The language of the reply, its fixed texts and the card. Spanish when not given. */
+  locale?: Locale;
+  /** What the patient likes to be called, when they have said so in their settings. */
+  name?: string;
   eps?: string;
   /** Set when the patient pressed "Reintentar": the reply they were not happy with, so the new one is different. */
   avoid?: string;
@@ -72,14 +65,21 @@ function userTurns(messages: TriageInput["messages"]): number {
   return messages.filter((message) => message.role === "user").length;
 }
 
-function buildCard(level: CareLevel, justificacion: string, queLlevar: string[], eps?: string): OrientationCard {
+function buildCard(
+  level: CareLevel,
+  justificacion: string,
+  queLlevar: string[],
+  locale: Locale,
+  eps?: string,
+): OrientationCard {
+  const t = messages[locale];
   return {
     nivel: level,
-    nivelLabel: LEVEL_LABEL[level],
+    nivelLabel: t.levels[level],
     justificacion,
-    queLlevar: queLlevar.length > 0 ? queLlevar : DEFAULT_CHECKLIST,
-    sedes: findProviders(level, eps, 2),
-    aviso: LEGAL_DISCLAIMER,
+    queLlevar: queLlevar.length > 0 ? queLlevar : t.server.checklist,
+    sedes: findProviders(level, eps, 2, locale),
+    aviso: t.server.disclaimer,
   };
 }
 
@@ -111,11 +111,23 @@ export function asModelTurn({ role, content }: Pick<ChatMessage, "role" | "conte
   };
 }
 
-function buildSystem(input: TriageInput, priorAlarm: boolean): string {
+/** A nickname goes into the prompt, so only plain name characters get through, whatever the settings hold. */
+function safeName(name: string | undefined): string {
+  return (name ?? "").replace(/[^\p{L}\p{M}'’ .-]/gu, "").replace(/\s+/g, " ").trim().slice(0, 30);
+}
+
+function buildSystem(input: TriageInput, priorAlarm: boolean, locale: Locale): string {
   const oriented = input.messages.some(
     (message) => message.role === "assistant" && message.content.includes(ORIENTATION_MARK),
   );
-  const notes = [`EPS mencionada: ${input.eps || "no indicada"}`];
+  const language = messages[locale].server.answerLanguage;
+  const notes = [
+    `EPS mencionada: ${input.eps || "no indicada"}`,
+    // The instructions above are in Spanish; the patient's language is the one the reply is written in.
+    `Idioma de la conversación: ${language}. Escribe TODA tu respuesta en ${language}: el campo "mensaje", y también "justificacion" y "queLlevar". No cambies de idioma aunque el historial esté en otro.`,
+  ];
+  const name = safeName(input.name);
+  if (name) notes.push(`El paciente prefiere que lo llames «${name}». Úsalo con naturalidad, sin repetirlo en cada mensaje.`);
 
   if (priorAlarm && !oriented) {
     notes.push(
@@ -138,8 +150,9 @@ function buildSystem(input: TriageInput, priorAlarm: boolean): string {
 
 export async function runTriage(input: TriageInput): Promise<TriageResponse> {
   // Only the newest message triggers the fixed alert. Later replies go to the model, which knows about the alarm.
+  const locale = input.locale ?? "es";
   if (detectRedFlag(lastUserText(input.messages)).matched) {
-    return { kind: "red_flag", message: RED_FLAG_MESSAGE };
+    return { kind: "red_flag", message: redFlagMessage(locale) };
   }
   const priorAlarm = input.messages.some((message) => message.role === "user" && detectRedFlag(message.content).matched);
 
@@ -157,7 +170,7 @@ export async function runTriage(input: TriageInput): Promise<TriageResponse> {
     const result = await generateText({
       model: reto.chat(process.env.RETO_MODEL || DEFAULT_MODEL),
       temperature: input.avoid?.trim() ? RETRY_TEMPERATURE : TEMPERATURE,
-      system: buildSystem(input, priorAlarm),
+      system: buildSystem(input, priorAlarm, locale),
       // Real roles, so each patient reply is read as the answer to the assistant's previous message.
       messages: input.messages.map(asModelTurn),
     });
@@ -189,11 +202,12 @@ export async function runTriage(input: TriageInput): Promise<TriageResponse> {
     const level = parsed.nivel ?? "prioritaria";
     return {
       kind: "orientation",
-      message: message || "Con lo que me contaste, esta es mi orientación.",
+      message: message || messages[locale].server.defaultMessage,
       card: buildCard(
         level,
-        parsed.justificacion || "Por los síntomas que describes, este caso se beneficia de una atención en este nivel.",
-        parsed.queLlevar ?? DEFAULT_CHECKLIST,
+        parsed.justificacion || messages[locale].server.defaultReason,
+        parsed.queLlevar ?? [],
+        locale,
         input.eps,
       ),
     };

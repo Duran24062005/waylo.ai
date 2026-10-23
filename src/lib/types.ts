@@ -41,12 +41,23 @@ export interface GuestUsage {
   resetAt?: number;
 }
 
+/** How much of the daily and monthly allowance a signed-in account has used, and the wait if it ran out. */
+export interface AccountUsage {
+  dayUsed: number;
+  dayLimit: number;
+  monthUsed: number;
+  monthLimit: number;
+  blocked: { scope: "day" | "month"; resetAt: number } | null;
+}
+
 export interface TriageResponse {
   kind: "red_flag" | "question" | "orientation";
   message: string;
   card?: OrientationCard;
   /** Only present for visitors without an account. */
   guest?: GuestUsage;
+  /** Only present for signed-in accounts. */
+  usage?: AccountUsage;
 }
 
 /** A saved chat, kept in the browser. */

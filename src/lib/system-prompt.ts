@@ -24,6 +24,3 @@ Para conversar o preguntar:
 {"mensaje":"lo que verá el paciente","listo":false}
 Cuando ya puedas orientar:
 {"mensaje":"explicación cálida de la orientación en 2 o 3 frases, sin diagnosticar","listo":true,"nivel":"urgencias"|"prioritaria"|"general","justificacion":"frase corta sin diagnóstico","queLlevar":["Documento de identidad","..."]}`;
-
-export const LEGAL_DISCLAIMER =
-  "Esta orientación no es un diagnóstico ni reemplaza la valoración de un profesional de la salud. Si empeoras o tienes dudas, busca atención médica.";

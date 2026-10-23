@@ -6,16 +6,19 @@ import { Hero } from "@/components/home/Hero";
 import { HeroDecor } from "@/components/home/HeroDecor";
 import { ThemeToggle } from "@/components/theme";
 import { buttonPrimary } from "@/components/ui/buttons";
+import { getMessages } from "@/i18n/server";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = {
-  title: "Inicio",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getMessages();
+  return { title: t.meta.titles.home };
+}
 
 // One column for the whole page: logo, title and text share the same left edge.
 const column = "mx-auto w-full max-w-7xl px-4 sm:px-8";
 
-export default function InicioPage() {
+export default async function InicioPage() {
+  const { t } = await getMessages();
   // The chat is open to everyone: visitors without an account get a few free replies there.
   const chatHref = "/chat";
 
@@ -30,7 +33,7 @@ export default function InicioPage() {
           </span>
           <div className="flex items-center gap-3">
             <Link href={chatHref} className={cn(buttonPrimary, "group h-12 gap-2 px-5 text-base")}>
-              Ir al Chat
+              {t.home.goToChat}
               <HugeiconsIcon
                 icon={ArrowRight02Icon}
                 size={18}

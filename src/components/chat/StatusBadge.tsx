@@ -4,8 +4,8 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { MascotState } from "@/components/mascot";
 import { duration, easing } from "@/design/motion";
+import { useT } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
-import { STATUS_COPY } from "./status";
 
 const DOT: Record<MascotState, string> = {
   idle: "bg-success",
@@ -30,7 +30,7 @@ const CHROME_PX = 52;
 // upward, the new text enters from below. Nothing animates on first render.
 export function StatusBadge({ state, className }: { state: MascotState; className?: string }) {
   const reduced = useReducedMotion();
-  const label = STATUS_COPY[state];
+  const label = useT().status[state];
   // One stable, invisible copy of the current label. Measuring it avoids the animated copies,
   // which overlap while a roll is in progress. It also catches web fonts that load late.
   const sizerRef = useRef<HTMLSpanElement>(null);
