@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, type KeyboardEvent } from "react";
+import { useId, useRef, type KeyboardEvent, type ReactNode } from "react";
 import { motion } from "motion/react";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import { duration, easing } from "@/design/motion";
@@ -10,6 +10,10 @@ export interface SegmentOption<T extends string> {
   value: T;
   label: string;
   icon?: IconSvgElement;
+  /** A drawn icon of our own, when the icon set has none that fits. */
+  iconNode?: ReactNode;
+  /** The option is only its icon. The label stays as the accessible name and as the tooltip. */
+  iconOnly?: boolean;
   /** A smaller line under the label, such as a language code. */
   caption?: string;
 }
@@ -67,12 +71,14 @@ export function SegmentedControl<T extends string>({
             type="button"
             role="radio"
             aria-checked={active}
+            title={option.iconOnly ? option.label : undefined}
             // With nothing chosen yet, the first option takes the tab stop so the group can still be reached.
             tabIndex={active || (!options.some((o) => o.value === value) && index === 0) ? 0 : -1}
             disabled={disabled}
             onClick={() => onChange(option.value)}
             className={cn(
-              "relative flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2 text-center font-heading text-sm font-semibold",
+              "relative flex cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2 text-center font-heading text-sm font-semibold",
+              option.iconOnly ? "min-h-14" : "min-h-12",
               "transition-colors duration-[var(--duration-base)] ease-standard",
               "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-60",
               active ? "text-text" : "text-text-muted hover:text-text",
@@ -86,7 +92,8 @@ export function SegmentedControl<T extends string>({
               />
             ) : null}
             {option.icon ? <HugeiconsIcon icon={option.icon} size={18} strokeWidth={2.25} aria-hidden className="relative shrink-0" /> : null}
-            <span className="relative flex flex-col leading-tight">
+            {option.iconNode ? <span className="relative grid shrink-0 place-items-center">{option.iconNode}</span> : null}
+            <span className={cn("relative flex flex-col leading-tight", option.iconOnly && "sr-only")}>
               <span>{option.label}</span>
               {option.caption ? <span className="text-xs font-medium text-text-muted">{option.caption}</span> : null}
             </span>

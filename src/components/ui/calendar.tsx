@@ -52,6 +52,7 @@ function CalendarDropdown({ options = [], value, onChange, "aria-label": ariaLab
         <Select.Content
           position="popper"
           sideOffset={6}
+          data-lenis-prevent
           className="popover-motion z-[60] max-h-64 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-lg bg-surface-raised p-1 text-text shadow-raised"
         >
           <Select.ScrollUpButton className="flex h-6 items-center justify-center text-text-muted">

@@ -115,6 +115,8 @@ export function Combobox({
             align="start"
             sideOffset={8}
             collisionPadding={12}
+            // The menu lives outside the window, so the page's smooth scroll would take the wheel from its list.
+            data-lenis-prevent
             className="popover-motion z-50 w-[var(--radix-popover-trigger-width)] min-w-64 rounded-xl bg-surface-raised p-2 text-text shadow-raised"
           >
             <div className="relative">

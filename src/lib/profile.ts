@@ -2,7 +2,8 @@ import { z } from "zod";
 import { isColombianCity } from "@/data/ciudades";
 import { isCountryCode } from "@/data/paises";
 
-export const SEXES = ["masculino", "femenino", "otro"] as const;
+// Two options, drawn as icons in the settings. The column keeps its old name.
+export const SEXES = ["masculino", "femenino"] as const;
 export type Sex = (typeof SEXES)[number];
 
 export const NAME_MAX = 80;

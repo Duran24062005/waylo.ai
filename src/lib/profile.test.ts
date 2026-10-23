@@ -45,11 +45,11 @@ describe("profileSchema", () => {
     }
   });
 
-  it("takes only the three options for sex, or none", () => {
-    for (const sexo of ["masculino", "femenino", "otro", null]) {
+  it("takes only the two options for gender, or none", () => {
+    for (const sexo of ["masculino", "femenino", null]) {
       expect(profileSchema.safeParse({ sexo }).success, String(sexo)).toBe(true);
     }
-    for (const sexo of ["hombre", "M", "", 1]) {
+    for (const sexo of ["otro", "hombre", "M", "", 1]) {
       expect(profileSchema.safeParse({ sexo }).success, String(sexo)).toBe(false);
     }
   });

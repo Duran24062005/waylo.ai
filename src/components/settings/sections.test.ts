@@ -2,17 +2,17 @@ import { describe, expect, it } from "vitest";
 import { GROUPS, isSection, SECTIONS } from "@/components/settings/sections";
 
 describe("settings sections", () => {
-  it("are the five the settings window lists, each in exactly one group", () => {
-    expect([...SECTIONS].sort()).toEqual(["account", "appearance", "general", "live", "usage"]);
+  it("are the six the settings window lists, each in exactly one group", () => {
+    expect([...SECTIONS].sort()).toEqual(["account", "appearance", "general", "live", "security", "usage"]);
     const listed = GROUPS.flatMap((group) => group.sections);
     expect([...listed].sort()).toEqual([...SECTIONS].sort());
     expect(new Set(listed).size).toBe(listed.length);
   });
 
-  it("keep the preferences apart from the account, with the profile before the usage", () => {
+  it("keep the preferences apart from the account, with the profile first, then security, then usage", () => {
     expect(GROUPS.map((group) => group.id)).toEqual(["preferences", "account"]);
     expect(GROUPS[0].sections).toEqual(["general", "appearance", "live"]);
-    expect(GROUPS[1].sections).toEqual(["account", "usage"]);
+    expect(GROUPS[1].sections).toEqual(["account", "security", "usage"]);
   });
 
   it("accepts only a section that exists, so a link cannot open anything else", () => {

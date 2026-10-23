@@ -5,6 +5,7 @@ const verifyPassword = vi.fn();
 const updateProfile = vi.fn();
 const closeSession = vi.fn();
 const closeOtherSessions = vi.fn();
+const endSession = vi.fn();
 const sqlResults: (unknown[] | Error)[] = [];
 const sqlCalls: { text: string; values: unknown[] }[] = [];
 const cookieWrites: Record<string, string> = {};
@@ -27,7 +28,7 @@ vi.mock("next/headers", () => ({
   headers: async () => ({ get: () => null }),
 }));
 vi.mock("@/lib/db", () => ({ getSql: () => sql }));
-vi.mock("@/lib/session", () => ({ getSession: () => getSession() }));
+vi.mock("@/lib/session", () => ({ getSession: () => getSession(), endSession: () => endSession() }));
 vi.mock("@/lib/password", () => ({ verifyPassword: (...args: unknown[]) => verifyPassword(...args) }));
 vi.mock("@/lib/profile-db", () => ({
   updateProfile: (...args: unknown[]) => updateProfile(...args),
@@ -35,6 +36,7 @@ vi.mock("@/lib/profile-db", () => ({
   closeOtherSessions: (...args: unknown[]) => closeOtherSessions(...args),
 }));
 
+import { DELETE as deleteAccount } from "@/app/api/cuenta/route";
 import { PATCH as patchEmail } from "@/app/api/perfil/correo/route";
 import { PATCH as patchProfile } from "@/app/api/perfil/route";
 import { PATCH as patchPreferences } from "@/app/api/preferencias/route";
@@ -60,6 +62,7 @@ beforeEach(() => {
   updateProfile.mockReset().mockResolvedValue(undefined);
   closeSession.mockReset().mockResolvedValue(true);
   closeOtherSessions.mockReset().mockResolvedValue(2);
+  endSession.mockReset().mockResolvedValue(undefined);
 });
 
 describe("PATCH /api/preferencias", () => {
@@ -275,5 +278,88 @@ describe("DELETE /api/sesiones/[id]", () => {
   it("answers 401 without a session", async () => {
     getSession.mockResolvedValue(null);
     expect((await call(OTHER_SID)).status).toBe(401);
+  });
+});
+
+describe("DELETE /api/cuenta", () => {
+  const remove = (body: unknown) =>
+    deleteAccount(
+      new Request("http://localhost/api/cuenta", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    );
+  const deleted = () => sqlCalls.some((call) => call.text.includes("delete from personas"));
+
+  it("answers 401 without a session, and deletes nothing", async () => {
+    getSession.mockResolvedValue(null);
+
+    expect((await remove({ password: "x" })).status).toBe(401);
+    expect(sqlCalls).toHaveLength(0);
+  });
+
+  it("deletes the account and ends the session once the password is right", async () => {
+    sqlResults.push([{ email: "ana@correo.com", password_hash: "hash" }], []);
+
+    const response = await remove({ password: "secreta123" });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true, id: "u1" });
+    expect(verifyPassword).toHaveBeenCalledWith("secreta123", "hash");
+    expect(deleted()).toBe(true);
+    expect(sqlCalls[1].values).toEqual(["u1"]);
+    expect(endSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not delete anything with a wrong or missing password", async () => {
+    sqlResults.push([{ email: "ana@correo.com", password_hash: "hash" }]);
+    verifyPassword.mockResolvedValue(false);
+    const wrong = await remove({ password: "equivocada" });
+    expect(wrong.status).toBe(401);
+    expect(await wrong.json()).toEqual({ error: "wrong_password" });
+
+    sqlResults.push([{ email: "ana@correo.com", password_hash: "hash" }]);
+    expect((await remove({})).status).toBe(401);
+
+    expect(deleted()).toBe(false);
+    expect(endSession).not.toHaveBeenCalled();
+  });
+
+  it("asks an account made with Google for its email, since it has no password here", async () => {
+    sqlResults.push([{ email: "Ana@Gmail.com", password_hash: null }], []);
+
+    const response = await remove({ email: "  ana@gmail.com " });
+
+    expect(response.status).toBe(200);
+    expect(verifyPassword).not.toHaveBeenCalled();
+    expect(deleted()).toBe(true);
+  });
+
+  it("does not delete a Google account when the email typed is not its own", async () => {
+    sqlResults.push([{ email: "ana@gmail.com", password_hash: null }]);
+
+    const response = await remove({ email: "otra@gmail.com" });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "mismatch" });
+    expect(deleted()).toBe(false);
+  });
+
+  it("does not accept a password in place of the email for a Google account, or the other way round", async () => {
+    sqlResults.push([{ email: "ana@gmail.com", password_hash: null }]);
+    expect((await remove({ password: "ana@gmail.com" })).status).toBe(400);
+
+    sqlResults.push([{ email: "ana@correo.com", password_hash: "hash" }]);
+    verifyPassword.mockResolvedValue(false);
+    expect((await remove({ email: "ana@correo.com" })).status).toBe(401);
+    expect(deleted()).toBe(false);
+  });
+
+  it("answers 500 when the database fails, and keeps the session", async () => {
+    sqlResults.push(new Error("db down"));
+
+    expect((await remove({ password: "x" })).status).toBe(500);
+    expect(endSession).not.toHaveBeenCalled();
   });
 });

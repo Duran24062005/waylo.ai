@@ -9,6 +9,7 @@ import {
   LanguageSquareIcon,
   Mic01Icon,
   PaintBrush01Icon,
+  Shield01Icon,
   UserCircleIcon,
 } from "@hugeicons/core-free-icons";
 import { buttonSoft } from "@/components/ui/buttons";
@@ -23,6 +24,7 @@ import { AccountPanel } from "./AccountPanel";
 import { AppearancePanel } from "./AppearancePanel";
 import { GeneralPanel } from "./GeneralPanel";
 import { LivePanel } from "./LivePanel";
+import { SecurityPanel } from "./SecurityPanel";
 import { UsagePanel } from "./UsagePanel";
 import { GROUPS, SECTIONS, type SectionId } from "./sections";
 
@@ -31,6 +33,7 @@ const ICONS: Record<SectionId, IconSvgElement> = {
   appearance: PaintBrush01Icon,
   live: Mic01Icon,
   account: UserCircleIcon,
+  security: Shield01Icon,
   usage: Analytics01Icon,
 };
 
@@ -129,7 +132,7 @@ export function SettingsDialog({ section, onSection, onClose }: SettingsDialogPr
     tabs.current[next]?.focus();
   }
 
-  const needsData = section === "live" || section === "account" || section === "usage";
+  const needsData = section === "live" || section === "account" || section === "security" || section === "usage";
 
   // A plain function, not a component: a component declared here would be rebuilt on every render and lose its focus.
   function renderTab(id: SectionId) {
@@ -213,6 +216,7 @@ export function SettingsDialog({ section, onSection, onClose }: SettingsDialogPr
             aria-label={t.title}
             aria-orientation="vertical"
             onKeyDown={onTabsKeyDown}
+            data-lenis-prevent
             className="scroll-soft flex shrink-0 gap-1 overflow-x-auto px-4 pb-3 md:flex-col md:gap-0 md:overflow-y-auto md:overflow-x-visible md:px-4 md:pb-4"
           >
             {GROUPS.map((group) => (
@@ -225,7 +229,8 @@ export function SettingsDialog({ section, onSection, onClose }: SettingsDialogPr
             ))}
           </div>
 
-          <div className="scroll-soft min-h-0 overflow-y-auto border-t border-text/10 px-5 py-6 sm:px-8 md:border-l md:border-t-0">
+          {/* data-lenis-prevent: the page's smooth scroll would take the mouse wheel and this list would never move. */}
+          <div data-lenis-prevent className="scroll-soft min-h-0 overflow-y-auto border-t border-text/10 px-5 py-6 sm:px-8 md:border-l md:border-t-0">
             {/* Every section stays mounted once the data is here, so what was typed in one is still there when coming back. */}
             <div role="tabpanel" id="settings-panel-general" aria-labelledby="settings-tab-general" hidden={section !== "general"} className="flex flex-col gap-8">
               <GeneralPanel />
@@ -255,7 +260,10 @@ export function SettingsDialog({ section, onSection, onClose }: SettingsDialogPr
                   <LivePanel voice={data.voice} language={data.liveLanguage} />
                 </div>
                 <div role="tabpanel" id="settings-panel-account" aria-labelledby="settings-tab-account" hidden={section !== "account"} className="flex flex-col gap-8">
-                  <AccountPanel profile={data.profile} sessions={data.sessions} />
+                  <AccountPanel profile={data.profile} />
+                </div>
+                <div role="tabpanel" id="settings-panel-security" aria-labelledby="settings-tab-security" hidden={section !== "security"} className="flex flex-col gap-8">
+                  <SecurityPanel profile={data.profile} sessions={data.sessions} />
                 </div>
                 <div role="tabpanel" id="settings-panel-usage" aria-labelledby="settings-tab-usage" hidden={section !== "usage"} className="flex flex-col gap-8">
                   <UsagePanel usage={data.usage} />

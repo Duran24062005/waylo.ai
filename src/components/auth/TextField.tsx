@@ -13,16 +13,18 @@ export interface TextFieldProps extends Omit<ComponentProps<"input">, "id" | "cl
   leading?: IconSvgElement;
   /** Id for the input. Generated when omitted. */
   id?: string;
+  /** The label is kept for screen readers only, when a heading already names the field. */
+  hideLabel?: boolean;
 }
 
-export function TextField({ label, error, trailing, leading, id, ref, ...inputProps }: TextFieldProps) {
+export function TextField({ label, error, trailing, leading, id, hideLabel, ref, ...inputProps }: TextFieldProps) {
   const generatedId = useId();
   const inputId = id ?? generatedId;
   const errorId = `${inputId}-error`;
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={inputId} className="font-heading text-sm font-medium text-text">
+      <label htmlFor={inputId} className={hideLabel ? "sr-only" : "font-heading text-sm font-medium text-text"}>
         {label}
       </label>
       <div className="relative">
