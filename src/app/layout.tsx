@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, Pacifico, Poppins } from "next/font/google";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { I18nProvider } from "@/i18n/I18nProvider";
-import { getLocale, getMessages } from "@/i18n/server";
+import { getLanguageChoice, getLocale, getMessages } from "@/i18n/server";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { THEME_INIT_SCRIPT } from "@/components/theme/theme-script";
 import "./globals.css";
@@ -30,14 +30,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const locale = await getLocale();
+  const [locale, choice] = await Promise.all([getLocale(), getLanguageChoice()]);
   return (
     <html lang={locale} suppressHydrationWarning className="scroll-soft">
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className={`${manrope.variable} ${poppins.variable} ${pacifico.variable} antialiased`}>
-        <I18nProvider locale={locale}>
+        <I18nProvider locale={locale} choice={choice}>
           <ThemeProvider>
             <SmoothScroll />
             {children}

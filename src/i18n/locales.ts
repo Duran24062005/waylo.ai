@@ -9,6 +9,17 @@ export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && (LOCALES as readonly string[]).includes(value);
 }
 
+/**
+ * What the person picks as their language. "auto" follows the browser for the app and its replies, and lets
+ * the speech recognizer work out which language is spoken in a voice conversation. The others fix it everywhere.
+ */
+export const LANGUAGE_CHOICES = ["auto", "en", "es", "pt"] as const;
+export type LanguageChoice = (typeof LANGUAGE_CHOICES)[number];
+
+export function isLanguageChoice(value: unknown): value is LanguageChoice {
+  return typeof value === "string" && (LANGUAGE_CHOICES as readonly string[]).includes(value);
+}
+
 /** The best supported language for an Accept-Language header, or the default. Used on a first visit, before a choice is made. */
 export function matchLocale(header: string | null | undefined): Locale {
   if (!header) return DEFAULT_LOCALE;

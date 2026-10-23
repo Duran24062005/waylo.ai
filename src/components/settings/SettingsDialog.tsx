@@ -16,7 +16,7 @@ import {
 import { buttonSoft } from "@/components/ui/buttons";
 import { duration, easing } from "@/design/motion";
 import { useT } from "@/i18n/I18nProvider";
-import type { LiveLanguage, Voice } from "@/lib/preferences";
+import type { Voice } from "@/lib/preferences";
 import type { Profile } from "@/lib/profile";
 import type { SessionInfo } from "@/lib/profile-db";
 import type { EpsState } from "@/lib/eps";
@@ -45,7 +45,6 @@ const ICONS: Record<SectionId, IconSvgElement> = {
 interface SettingsData {
   signedIn: boolean;
   voice: Voice;
-  liveLanguage: LiveLanguage;
   profile: Profile | null;
   sessions: SessionInfo[];
   usage: AccountUsage | null;
@@ -262,7 +261,7 @@ export function SettingsDialog({ section, onSection, onClose }: SettingsDialogPr
             {data ? (
               <>
                 <div role="tabpanel" id="settings-panel-live" aria-labelledby="settings-tab-live" hidden={section !== "live"} className="flex flex-col gap-8">
-                  <LivePanel voice={data.voice} language={data.liveLanguage} />
+                  <LivePanel voice={data.voice} />
                 </div>
                 <div role="tabpanel" id="settings-panel-account" aria-labelledby="settings-tab-account" hidden={section !== "account"} className="flex flex-col gap-8">
                   <AccountPanel profile={data.profile} />

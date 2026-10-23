@@ -2,7 +2,8 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getMessages } from "@/i18n/server";
 import { gatewayConfig } from "@/lib/gateway";
-import { DEFAULT_LIVE_LANGUAGE, isLiveLanguage, LIVE_LANG_COOKIE, languageOf } from "@/lib/preferences";
+import { isLocale, LANG_COOKIE } from "@/i18n/locales";
+import { languageOf } from "@/lib/preferences";
 
 export const maxDuration = 30;
 
@@ -22,9 +23,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: t.server.errors.voiceUnavailable }, { status: 503 });
   }
 
-  // The Live language from the settings. "auto" sends none, and the recognizer works out which one is spoken.
-  const saved = (await cookies()).get(LIVE_LANG_COOKIE)?.value;
-  const live = isLiveLanguage(saved) ? saved : DEFAULT_LIVE_LANGUAGE;
+  // The language chosen in the settings fixes the one that is spoken. With "auto" there is no cookie, nothing is sent,
+  // and the recognizer works out which language is spoken.
+  const saved = (await cookies()).get(LANG_COOKIE)?.value;
+  const live = isLocale(saved) ? saved : "auto";
 
   const upstreamForm = new FormData();
   upstreamForm.append("file", audio, audio instanceof File && audio.name ? audio.name : "voz.webm");

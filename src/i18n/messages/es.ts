@@ -282,7 +282,8 @@ export const es = {
     general: {
       title: "General",
       languageLabel: "Idioma",
-      languageHint: "El idioma de la app y el de las respuestas de Waylo.",
+      languageHint: "El idioma de la app, de las respuestas de Waylo y de la voz. Con detección automática usa el de tu navegador y entiende el idioma en que le hables.",
+      auto: "Detección automática",
     },
     appearance: {
       title: "Apariencia",
@@ -375,9 +376,6 @@ export const es = {
       title: "Waylo Live",
       voiceLabel: "Voz",
       voiceOptions: { femenino: "Femenina", masculino: "Masculina" },
-      languageLabel: "Idioma",
-      languageHint: "El idioma en que hablas con Waylo por voz. Con detección automática, Waylo responde en el idioma que le hables.",
-      auto: "Detección automática",
       preview: "Escuchar la voz",
       pause: "Pausar",
       voiceHints: { femenino: "Voz cálida y cercana", masculino: "Voz clara y profesional" },

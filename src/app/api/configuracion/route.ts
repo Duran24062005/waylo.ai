@@ -11,7 +11,7 @@ import { readUsage, usageStatus } from "@/lib/usage";
 export async function GET() {
   const [locale, session, jar] = await Promise.all([getLocale(), getSession(), cookies()]);
   const preferences = readPreferences((name) => jar.get(name)?.value, locale);
-  const common = { voice: preferences.voz, liveLanguage: preferences.idiomaLive };
+  const common = { voice: preferences.voz };
   const headers = { "Cache-Control": "no-store" };
 
   if (!session) {

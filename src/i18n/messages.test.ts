@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_LOCALE, isLocale, LOCALES, matchLocale } from "@/i18n/locales";
+import { DEFAULT_LOCALE, isLanguageChoice, isLocale, LANGUAGE_CHOICES, LOCALES, matchLocale } from "@/i18n/locales";
 import { messages } from "@/i18n/messages";
 import { es } from "@/i18n/messages/es";
 
@@ -83,6 +83,14 @@ describe("locales", () => {
     expect(isLocale("pt")).toBe(true);
     expect(isLocale("fr")).toBe(false);
     expect(isLocale(undefined)).toBe(false);
+  });
+
+  it("offers the languages and automatic detection as the one language setting, in the order the picker shows them", () => {
+    expect([...LANGUAGE_CHOICES]).toEqual(["auto", "en", "es", "pt"]);
+    for (const value of LANGUAGE_CHOICES) expect(isLanguageChoice(value)).toBe(true);
+    for (const value of ["fr", "", "AUTO", undefined, null]) expect(isLanguageChoice(value), String(value)).toBe(false);
+    // "auto" is a choice, not a language: it has no dictionary.
+    expect(isLocale("auto")).toBe(false);
   });
 
   it("picks the best language for the browser's list, by preference", () => {

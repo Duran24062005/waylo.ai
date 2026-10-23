@@ -1,10 +1,9 @@
 "use client";
 
-import { ComputerIcon, Moon02Icon, Sun01Icon } from "@hugeicons/core-free-icons";
-import { useTheme, type ThemePreference } from "@/components/theme";
+import { useTheme } from "@/components/theme";
 import { useT } from "@/i18n/I18nProvider";
-import { SegmentedControl } from "./SegmentedControl";
 import { Setting, SettingsCard } from "./SettingsCard";
+import { ThemeCards } from "./ThemeCards";
 
 export function AppearancePanel() {
   const t = useT().settings.appearance;
@@ -13,14 +12,14 @@ export function AppearancePanel() {
   return (
     <SettingsCard title={t.title}>
       <Setting label={t.modeLabel} hint={t.modeHint}>
-        <SegmentedControl<ThemePreference>
+        <ThemeCards
           label={t.modeLabel}
           value={preference}
           onChange={setPreference}
           options={[
-            { value: "light", label: t.light, icon: Sun01Icon },
-            { value: "dark", label: t.dark, icon: Moon02Icon },
-            { value: "system", label: t.system, icon: ComputerIcon },
+            { value: "light", label: t.light },
+            { value: "dark", label: t.dark },
+            { value: "system", label: t.system },
           ]}
         />
       </Setting>

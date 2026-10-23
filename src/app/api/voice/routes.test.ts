@@ -170,8 +170,8 @@ describe("POST /api/voice/transcribe", () => {
     expect((await (await transcribe(audioRequest(new Blob(["b"])))).json()).language).toBeNull();
   });
 
-  it("sends the language fixed in the settings and answers with it", async () => {
-    jar.waylo_live_lang = "en";
+  it("sends the language chosen in the settings and answers with it", async () => {
+    jar.waylo_lang = "en";
     fetchMock.mockResolvedValueOnce(Response.json({ text: "Hello", language: "es" }));
 
     const body = await (await transcribe(audioRequest(new Blob(["b"])))).json();
@@ -180,8 +180,8 @@ describe("POST /api/voice/transcribe", () => {
     expect(body.language).toBe("en");
   });
 
-  it("treats a Live language cookie that is not valid as automatic", async () => {
-    jar.waylo_live_lang = "xx";
+  it("treats a language cookie that is not valid as automatic", async () => {
+    jar.waylo_lang = "xx";
     fetchMock.mockResolvedValueOnce(Response.json({ text: "Hola", language: "es" }));
 
     await transcribe(audioRequest(new Blob(["b"])));

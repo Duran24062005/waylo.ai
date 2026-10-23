@@ -67,12 +67,27 @@ beforeEach(() => {
 
 describe("PATCH /api/preferencias", () => {
   it("remembers the choices on this device and saves them on the account", async () => {
-    const response = await patchPreferences(patch("/api/preferencias", { idioma: "en", voz: "masculino", idiomaLive: "pt" }));
+    const response = await patchPreferences(patch("/api/preferencias", { idioma: "en", voz: "masculino" }));
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true, saved: true });
-    expect(cookieWrites).toEqual({ waylo_lang: "en", waylo_voice: "masculino", waylo_live_lang: "pt" });
-    expect(sqlCalls.map((call) => call.values)).toEqual([["en", "u1"], ["masculino", "u1"], ["pt", "u1"]]);
+    expect(cookieWrites).toEqual({ waylo_lang: "en", waylo_voice: "masculino" });
+    expect(sqlCalls.map((call) => call.values)).toEqual([["en", "u1"], ["masculino", "u1"]]);
+  });
+
+  it("takes \"auto\" as a language: the cookie is cleared so the app follows the browser, and the account keeps the choice", async () => {
+    const response = await patchPreferences(patch("/api/preferencias", { idioma: "auto" }));
+
+    expect(response.status).toBe(200);
+    expect(cookieWrites).toEqual({ waylo_lang: "" });
+    expect(sqlCalls.map((call) => call.values)).toEqual([["auto", "u1"]]);
+  });
+
+  it("has no separate language for the voice any more: it is the same one", async () => {
+    const response = await patchPreferences(patch("/api/preferencias", { idiomaLive: "en" }));
+
+    expect(response.status).toBe(400);
+    expect(cookieWrites).toEqual({});
   });
 
   it("changes only what was sent", async () => {

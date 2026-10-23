@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     const sql = getSql();
 
     const found = (await sql`
-      select id, nombre, idioma, voz, idioma_live from personas where google_id = ${profile.sub} or lower(email) = ${email} limit 1
+      select id, nombre, idioma, voz from personas where google_id = ${profile.sub} or lower(email) = ${email} limit 1
     `) as ({ id: string; nombre: string } & SavedPreferences)[];
 
     let person: { id: string; nombre: string };

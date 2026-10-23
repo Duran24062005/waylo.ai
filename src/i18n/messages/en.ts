@@ -276,7 +276,8 @@ export const en: Messages = {
     general: {
       title: "General",
       languageLabel: "Language",
-      languageHint: "The language of the app and of Waylo's replies.",
+      languageHint: "The language of the app, of Waylo's replies and of the voice. With automatic detection it uses your browser's and understands the language you speak to it.",
+      auto: "Automatic detection",
     },
     appearance: {
       title: "Appearance",
@@ -369,9 +370,6 @@ export const en: Messages = {
       title: "Waylo Live",
       voiceLabel: "Voice",
       voiceOptions: { femenino: "Female", masculino: "Male" },
-      languageLabel: "Language",
-      languageHint: "The language you speak with Waylo by voice. With automatic detection, Waylo answers in the language you speak.",
-      auto: "Automatic detection",
       preview: "Listen to the voice",
       pause: "Pause",
       voiceHints: { femenino: "Warm, friendly voice", masculino: "Clear, professional voice" },

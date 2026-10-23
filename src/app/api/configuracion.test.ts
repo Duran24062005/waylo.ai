@@ -39,7 +39,6 @@ beforeEach(() => {
 describe("GET /api/configuracion", () => {
   it("gives a signed-in account its profile, its sessions and its usage, and the device's voice choices", async () => {
     jar.waylo_voice = "masculino";
-    jar.waylo_live_lang = "en";
 
     const response = await GET();
     const body = await response.json();
@@ -52,7 +51,6 @@ describe("GET /api/configuracion", () => {
       sessions: SESSIONS,
       eps: { eps: "confianza", cedula: "••••••3456", autorizado: true, acceso: false },
       voice: "masculino",
-      liveLanguage: "en",
       usage: { dayUsed: 0, dayLimit: 100, monthUsed: 0, monthLimit: 2000, blocked: null },
     });
     expect(listSessions).toHaveBeenCalledWith("u1", "s1");
@@ -63,19 +61,18 @@ describe("GET /api/configuracion", () => {
 
     const body = await (await GET()).json();
 
-    expect(body).toEqual({ signedIn: false, voice: "femenino", liveLanguage: "auto", profile: null, sessions: [], usage: null, eps: null });
+    expect(body).toEqual({ signedIn: false, voice: "femenino", profile: null, sessions: [], usage: null, eps: null });
     expect(getProfile).not.toHaveBeenCalled();
     expect(listSessions).not.toHaveBeenCalled();
   });
 
-  it("falls back to the defaults when the voice cookies are not valid", async () => {
+  it("falls back to the default when the voice cookie is not valid", async () => {
     getSession.mockResolvedValue(null);
     jar.waylo_voice = "robot";
-    jar.waylo_live_lang = "xx";
 
     const body = await (await GET()).json();
 
-    expect(body).toMatchObject({ voice: "femenino", liveLanguage: "auto" });
+    expect(body).toMatchObject({ voice: "femenino" });
   });
 
   it("answers 500 when the database fails, so the window can offer to try again", async () => {

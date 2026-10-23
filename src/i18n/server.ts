@@ -1,6 +1,13 @@
 import { cache } from "react";
 import { cookies, headers } from "next/headers";
-import { DEFAULT_LOCALE, isLocale, LANG_COOKIE, matchLocale, type Locale } from "@/i18n/locales";
+import {
+  DEFAULT_LOCALE,
+  isLocale,
+  LANG_COOKIE,
+  matchLocale,
+  type LanguageChoice,
+  type Locale,
+} from "@/i18n/locales";
 import { messages, type Messages } from "@/i18n/messages";
 
 /**
@@ -14,6 +21,16 @@ export const getLocale = cache(async (): Promise<Locale> => {
     return matchLocale((await headers()).get("accept-language"));
   } catch {
     return DEFAULT_LOCALE;
+  }
+});
+
+/** What the person chose: a language, or "auto" when they have not fixed one and the app follows their browser. */
+export const getLanguageChoice = cache(async (): Promise<LanguageChoice> => {
+  try {
+    const chosen = (await cookies()).get(LANG_COOKIE)?.value;
+    return isLocale(chosen) ? chosen : "auto";
+  } catch {
+    return "auto";
   }
 });
 

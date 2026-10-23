@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   try {
     const sql = getSql();
     const rows = (await sql`
-      select id, nombre, password_hash, idioma, voz, idioma_live from personas where lower(email) = ${parsed.data.email} limit 1
+      select id, nombre, password_hash, idioma, voz from personas where lower(email) = ${parsed.data.email} limit 1
     `) as ({ id: string; nombre: string; password_hash: string } & SavedPreferences)[];
     const person = rows[0];
     const ok = await verifyPassword(parsed.data.password, person?.password_hash ?? DUMMY_HASH);
