@@ -21,6 +21,10 @@ function useReducedMotion() {
 // Character colors are fixed on purpose: the sphere must read on light and dark surfaces.
 const EYE_COLOR = "#0d0d0d";
 
+/** How much further than the eyes the mute icon travels with the pointer, and how much it narrows at the side. */
+const MUTE_TRAVEL = 1.5;
+const MUTE_SQUASH = 0.16;
+
 /** Where each Z of a resting mascot starts, above and to the right of the sphere, and how big it is. */
 const ZZZ = [
   { x: 92, y: 26, size: 0.85 },
@@ -47,6 +51,8 @@ export function Mascot({ state, size = 120, className, label }: MascotProps) {
   const shutLeftRef = useRef<SVGPathElement>(null);
   const shutRightRef = useRef<SVGPathElement>(null);
   const muteRef = useRef<SVGGElement>(null);
+  // Carries the mute icon along with the pointer, so it reads as printed on the sphere and not floating over it.
+  const muteGazeRef = useRef<SVGGElement>(null);
   const zzzRefs = useRef<(SVGGElement | null)[]>([]);
   // Lives across state changes, so a new state turns from wherever the last one left the sphere.
   const turnRef = useRef({ value: 0 });
@@ -58,15 +64,25 @@ export function Mascot({ state, size = 120, className, label }: MascotProps) {
   // Pointer follow: the pointer lives in refs and quickTo, so no React state changes per frame.
   useLayoutEffect(() => {
     const gaze = gazeRef.current;
+    const muteGaze = muteGazeRef.current;
     const svg = svgRef.current;
-    if (!gaze || !svg || reduced) return;
+    if (!gaze || !muteGaze || !svg || reduced) return;
 
     const ctx = gsap.context(() => {
+      // Narrowing is about the icon's own center, not the corner GSAP would pick for an SVG group.
+      gsap.set(muteGaze, { transformOrigin: "50% 50%" });
       const quickX = gsap.quickTo(gaze, "x", { duration: duration.slow, ease: "power3.out" });
       const quickY = gsap.quickTo(gaze, "y", { duration: duration.slow, ease: "power3.out" });
+      // The icon sits lower on the sphere than the eyes, so it travels further and narrows as it turns away.
+      const muteX = gsap.quickTo(muteGaze, "x", { duration: duration.slow, ease: "power3.out" });
+      const muteY = gsap.quickTo(muteGaze, "y", { duration: duration.slow, ease: "power3.out" });
+      const muteSquash = gsap.quickTo(muteGaze, "scaleX", { duration: duration.slow, ease: "power3.out" });
       moveGazeRef.current = (x, y) => {
         quickX(x);
         quickY(y);
+        muteX(x * MUTE_TRAVEL);
+        muteY(y * MUTE_TRAVEL);
+        muteSquash(1 - MUTE_SQUASH * Math.min(1, Math.abs(x) / GAZE.maxX));
       };
     }, svg);
 
@@ -258,22 +274,24 @@ export function Mascot({ state, size = 120, className, label }: MascotProps) {
 
         {/* Where the mouth would be: the mute icon, a solid speaker with a cross. */}
         <g transform="translate(59.5 80)">
-          <g ref={muteRef} opacity="0">
-            {/* Speaker: a block and a cone, with rounded corners given by the stroke. */}
-            <path
-              d="M -8.4 -2.4 H -4.2 L 0 -6 V 6 L -4.2 2.4 H -8.4 Z"
-              fill={EYE_COLOR}
-              stroke={EYE_COLOR}
-              strokeWidth="1.6"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M 3.6 -3.4 L 8.6 3.4 M 8.6 -3.4 L 3.6 3.4"
-              fill="none"
-              stroke={EYE_COLOR}
-              strokeWidth="1.9"
-              strokeLinecap="round"
-            />
+          <g ref={muteGazeRef}>
+            <g ref={muteRef} opacity="0">
+              {/* Speaker: a block and a cone, with rounded corners given by the stroke. */}
+              <path
+                d="M -8.4 -2.4 H -4.2 L 0 -6 V 6 L -4.2 2.4 H -8.4 Z"
+                fill={EYE_COLOR}
+                stroke={EYE_COLOR}
+                strokeWidth="1.6"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M 3.6 -3.4 L 8.6 3.4 M 8.6 -3.4 L 3.6 3.4"
+                fill="none"
+                stroke={EYE_COLOR}
+                strokeWidth="1.9"
+                strokeLinecap="round"
+              />
+            </g>
           </g>
         </g>
       </g>

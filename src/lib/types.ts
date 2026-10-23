@@ -37,6 +37,8 @@ export interface OrientationCard {
 export interface GuestUsage {
   used: number;
   limit: number;
+  /** Epoch milliseconds when the free replies come back. Only set once they are used up. */
+  resetAt?: number;
 }
 
 export interface TriageResponse {

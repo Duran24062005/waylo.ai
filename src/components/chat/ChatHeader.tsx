@@ -65,7 +65,8 @@ export function ChatHeader({
             <HugeiconsIcon icon={Add01Icon} size={20} strokeWidth={2.25} aria-hidden />
             Nueva conversación
           </button>
-          <div className="scroll-soft max-h-60 overflow-y-auto">
+          {/* Padding with a matching negative margin: room for the rename field's halo, which scrolling would clip. */}
+          <div className="scroll-soft -m-2 max-h-64 overflow-y-auto p-2">
             <ConversationList
               conversations={conversations}
               activeId={activeId}

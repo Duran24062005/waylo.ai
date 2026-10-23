@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const jar: Record<string, string> = {};
 const runTriage = vi.fn();
@@ -14,10 +14,13 @@ vi.mock("@/lib/triage", () => ({
 }));
 
 import { POST } from "@/app/api/triage/route";
-import { encodeGuestCount, GUEST_COOKIE } from "@/lib/guest";
+import { encodeGuest, GUEST_COOKIE, GUEST_WAIT_MS } from "@/lib/guest";
 import { TriageUnavailableError } from "@/lib/triage";
 
 const question = { kind: "question", message: "¿Desde cuándo?" };
+const NOW = Date.UTC(2026, 9, 23, 12, 0, 0);
+// A visitor who used up the replies a moment ago. Built in beforeEach, once the secret is set.
+let waiting = "";
 
 function post(messages: unknown = [{ role: "user", content: "Me duele la rodilla" }]) {
   return POST(
@@ -34,10 +37,16 @@ function savedCount(response: Response): string | undefined {
 }
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"], now: NOW });
   for (const key of Object.keys(jar)) delete jar[key];
   runTriage.mockReset().mockResolvedValue(question);
   getSession.mockReset().mockResolvedValue(null);
   vi.stubEnv("AUTH_SECRET", "secreto-de-prueba");
+  waiting = encodeGuest(5, NOW + GUEST_WAIT_MS);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("POST /api/triage for visitors", () => {
@@ -45,40 +54,60 @@ describe("POST /api/triage for visitors", () => {
     const first = await post();
     expect(first.status).toBe(200);
     expect(await first.json()).toMatchObject({ ...question, guest: { used: 1, limit: 5 } });
-    expect(savedCount(first)).toBe(encodeGuestCount(1));
+    expect(savedCount(first)).toBe(encodeGuest(1));
 
-    jar[GUEST_COOKIE] = encodeGuestCount(1);
+    jar[GUEST_COOKIE] = encodeGuest(1);
     const second = await post();
     expect((await second.json()).guest).toEqual({ used: 2, limit: 5 });
-    expect(savedCount(second)).toBe(encodeGuestCount(2));
+    expect(savedCount(second)).toBe(encodeGuest(2));
   });
 
-  it("allows the fifth reply and blocks the sixth request without calling the model", async () => {
-    jar[GUEST_COOKIE] = encodeGuestCount(4);
+  it("allows the fifth reply, starts the wait, and blocks the sixth request without calling the model", async () => {
+    jar[GUEST_COOKIE] = encodeGuest(4);
     const fifth = await post();
     expect(fifth.status).toBe(200);
-    expect((await fifth.json()).guest).toEqual({ used: 5, limit: 5 });
+    expect((await fifth.json()).guest).toEqual({ used: 5, limit: 5, resetAt: NOW + GUEST_WAIT_MS });
+    expect(savedCount(fifth)).toBe(waiting);
 
     runTriage.mockClear();
-    jar[GUEST_COOKIE] = encodeGuestCount(5);
+    jar[GUEST_COOKIE] = waiting;
     const sixth = await post();
     expect(sixth.status).toBe(403);
-    expect(await sixth.json()).toEqual({ error: "guest_limit", guest: { used: 5, limit: 5 } });
+    expect(await sixth.json()).toEqual({
+      error: "guest_limit",
+      guest: { used: 5, limit: 5, resetAt: NOW + GUEST_WAIT_MS },
+    });
     expect(runTriage).not.toHaveBeenCalled();
   });
 
+  it("keeps blocking until the wait is over, then gives the five replies back", async () => {
+    jar[GUEST_COOKIE] = waiting;
+
+    vi.setSystemTime(NOW + GUEST_WAIT_MS - 1);
+    expect((await post()).status).toBe(403);
+
+    vi.setSystemTime(NOW + GUEST_WAIT_MS);
+    const back = await post();
+    expect(back.status).toBe(200);
+    expect((await back.json()).guest).toEqual({ used: 1, limit: 5 });
+    expect(savedCount(back)).toBe(encodeGuest(1));
+  });
+
   it("does not let a visitor win replies back by editing the cookie", async () => {
-    jar[GUEST_COOKIE] = `0.${encodeGuestCount(5).split(".")[1]}`;
+    const [, until, signature] = waiting.split(".");
 
-    const response = await post();
-
-    expect(response.status).toBe(403);
+    // Lowering the count, or moving the end of the wait into the past, keeping the old signature.
+    for (const token of [`0.${until}.${signature}`, `5.${NOW - 1}.${signature}`, "0.0.firma-inventada"]) {
+      jar[GUEST_COOKIE] = token;
+      const response = await post();
+      expect(response.status).toBe(403);
+    }
     expect(runTriage).not.toHaveBeenCalled();
   });
 
   it("does not charge the fixed alarm text, which is not an AI reply", async () => {
     runTriage.mockResolvedValue({ kind: "red_flag", message: "Acude a Urgencias." });
-    jar[GUEST_COOKIE] = encodeGuestCount(3);
+    jar[GUEST_COOKIE] = encodeGuest(3);
 
     const response = await post();
 
@@ -88,7 +117,7 @@ describe("POST /api/triage for visitors", () => {
 
   it("does not charge a reply the AI failed to give", async () => {
     runTriage.mockRejectedValue(new TriageUnavailableError("down"));
-    jar[GUEST_COOKIE] = encodeGuestCount(2);
+    jar[GUEST_COOKIE] = encodeGuest(2);
 
     const response = await post();
 
@@ -100,7 +129,7 @@ describe("POST /api/triage for visitors", () => {
 describe("POST /api/triage for signed-in users", () => {
   it("has no limit, even with a used-up visitor cookie, and adds no counter", async () => {
     getSession.mockResolvedValue({ id: "u1", nombre: "Gustavo" });
-    jar[GUEST_COOKIE] = encodeGuestCount(5);
+    jar[GUEST_COOKIE] = waiting;
 
     const response = await post();
 
@@ -137,7 +166,7 @@ describe("POST /api/triage retries", () => {
   });
 
   it("charges a retry like any other AI reply", async () => {
-    jar[GUEST_COOKIE] = encodeGuestCount(2);
+    jar[GUEST_COOKIE] = encodeGuest(2);
 
     const response = await postWith({ avoid: "Respuesta anterior" });
 

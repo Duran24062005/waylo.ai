@@ -5,9 +5,16 @@ import { motion } from "motion/react";
 import { buttonPrimary } from "@/components/ui/buttons";
 import { duration, easing } from "@/design/motion";
 import { cn } from "@/lib/utils";
+import { formatWait } from "@/lib/wait";
+import { TypewriterText } from "./TypewriterText";
+
+interface GuestLimitNoticeProps {
+  /** Milliseconds until the free replies come back. Null while it is not known yet. */
+  waitMs?: number | null;
+}
 
 /** Shown when a visitor without an account has used up the free replies and tries to write. */
-export function GuestLimitNotice() {
+export function GuestLimitNotice({ waitMs }: GuestLimitNoticeProps) {
   return (
     <motion.div
       role="alert"
@@ -17,8 +24,14 @@ export function GuestLimitNotice() {
       className="flex flex-col gap-3 rounded-2xl bg-surface-raised p-4 shadow-soft sm:flex-row sm:items-center sm:justify-between"
     >
       <div>
-        <p className="font-heading text-base font-semibold text-text">Llegaste a tu límite gratuito</p>
-        <p className="mt-0.5 text-sm text-text-muted">Inicia sesión o crea una cuenta para seguir conversando sin límite.</p>
+        <p className="font-heading text-base font-semibold text-text">
+          <TypewriterText text="Llegaste a tu límite gratuito" />
+        </p>
+        <p className="mt-0.5 text-sm text-text-muted">
+          {waitMs == null
+            ? "Inicia sesión o crea una cuenta para seguir conversando sin límite."
+            : `Tus respuestas gratis vuelven en ${formatWait(waitMs)}. O inicia sesión para seguir sin límite.`}
+        </p>
       </div>
       <Link href="/login" className={cn(buttonPrimary, "min-h-11 shrink-0 px-5 text-base")}>
         Iniciar sesión o registrarme

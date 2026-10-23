@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ChatApp } from "@/components/ChatApp";
-import { decodeGuestCount, GUEST_COOKIE, guestUsage } from "@/lib/guest";
+import { GUEST_COOKIE, guestUsage, readGuest } from "@/lib/guest";
 import { getSession } from "@/lib/session";
 import type { GuestUsage } from "@/lib/types";
 
@@ -16,9 +16,9 @@ export default async function ChatPage() {
   let guest: GuestUsage | undefined;
   if (!session) {
     try {
-      guest = guestUsage(decodeGuestCount((await cookies()).get(GUEST_COOKIE)?.value));
+      guest = guestUsage(readGuest((await cookies()).get(GUEST_COOKIE)?.value, Date.now()));
     } catch {
-      guest = guestUsage(0);
+      guest = guestUsage({ used: 0 });
     }
   }
 

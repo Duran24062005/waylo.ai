@@ -328,36 +328,69 @@ body {
   }
 }
 
-/* A slim scrollbar that stays out of the way: no arrow buttons, a rounded thumb that darkens on hover. */
+/*
+ * A slim scrollbar that stays out of the way: no arrows, no track, and a rounded thumb set in from the edge
+ * that darkens on hover and when dragged. Chrome, Edge and Safari get the pill through the WebKit pseudo-elements
+ * (the standard properties would give them a flat bar); Firefox gets the nearest thing, a thin bar.
+ */
 @utility scroll-soft {
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--text) 24%, transparent) transparent;
+  --scroll-thumb: color-mix(in srgb, var(--text) 22%, transparent);
+  --scroll-thumb-hover: color-mix(in srgb, var(--text) 42%, transparent);
+  --scroll-thumb-active: color-mix(in srgb, var(--text) 58%, transparent);
 
-  &:hover {
-    scrollbar-color: color-mix(in srgb, var(--text) 42%, transparent) transparent;
+  &::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  &::-webkit-scrollbar-track,
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-button {
+    display: none;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--scroll-thumb);
+    background-clip: content-box;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scroll-thumb-hover);
+  }
+  &::-webkit-scrollbar-thumb:active {
+    background-color: var(--scroll-thumb-active);
   }
 
-  /* Browsers that only know the WebKit pseudo-elements get the same look. */
-  @supports not (scrollbar-color: auto) {
-    &::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+  @supports not selector(::-webkit-scrollbar) {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) transparent;
+
+    &:hover {
+      scrollbar-color: var(--scroll-thumb-hover) transparent;
     }
-    &::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    &::-webkit-scrollbar-button {
-      display: none;
-    }
-    &::-webkit-scrollbar-thumb {
-      background-color: color-mix(in srgb, var(--text) 24%, transparent);
-      background-clip: content-box;
-      border: 2px solid transparent;
-      border-radius: 9999px;
-    }
-    &::-webkit-scrollbar-thumb:hover {
-      background-color: color-mix(in srgb, var(--text) 42%, transparent);
-    }
+  }
+}
+
+/*
+ * The bottom of a scroll area fades out instead of being cut. It is a mask, not a painted gradient, so what shows
+ * through is whatever is really behind (the page and the input's shadow): there is no color to match, hence no seam.
+ * The fade is on only while something is hidden below (data-clipped), and its height animates in and out.
+ */
+@property --scroll-fade {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@utility scroll-fade {
+  --scroll-fade: 0px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--scroll-fade)), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - var(--scroll-fade)), transparent);
+  transition: --scroll-fade var(--duration-base) var(--ease-standard);
+
+  &[data-clipped] {
+    --scroll-fade: 3rem;
   }
 }
 

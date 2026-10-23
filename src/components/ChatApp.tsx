@@ -12,6 +12,8 @@ import {
 } from "@/components/chat";
 import { LiveControls, LiveStage, MASCOT_STATE, useLiveVoice } from "@/components/live";
 import type { MascotState } from "@/components/mascot";
+import { ScrollEdge } from "@/components/chat/ScrollEdge";
+import { useRemaining } from "@/components/chat/useRemaining";
 import { SmoothScrollArea } from "@/components/SmoothScrollArea";
 import { duration, easing } from "@/design/motion";
 import {
@@ -42,8 +44,12 @@ function wait(ms: number) {
   return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 }
 
-/** The server refused the request because the visitor used up the free replies. */
-class GuestLimitError extends Error {}
+/** The server refused the request because the visitor used up the free replies. It says when they come back. */
+class GuestLimitError extends Error {
+  constructor(readonly guest?: GuestUsage) {
+    super("guest_limit");
+  }
+}
 
 /** Browsers can block storage (private windows, blocked site data), so every access is guarded. */
 function getStorage(): Storage | null {
@@ -72,6 +78,8 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
   const [focused, setFocused] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [guestUsed, setGuestUsed] = useState(guest?.used ?? 0);
+  // When the free replies come back, once they are used up.
+  const [guestResetAt, setGuestResetAt] = useState(guest?.resetAt);
   const [limitAttempted, setLimitAttempted] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState(() => crypto.randomUUID());
@@ -85,9 +93,20 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
 
   // Signing in or out re-renders the page with a new account. The server's count replaces the one on screen.
   const serverGuestUsed = guest?.used ?? 0;
+  const serverResetAt = guest?.resetAt;
   useEffect(() => {
     setGuestUsed(serverGuestUsed);
-  }, [serverGuestUsed, userId]);
+    setGuestResetAt(serverResetAt);
+  }, [serverGuestUsed, serverResetAt, userId]);
+
+  // The wait counts down on screen. When it ends the five replies are back, without reloading the page.
+  const waitLeft = useRemaining(guestResetAt);
+  useEffect(() => {
+    if (waitLeft !== 0) return;
+    setGuestUsed(0);
+    setGuestResetAt(undefined);
+    setLimitAttempted(false);
+  }, [waitLeft]);
 
   const limitReached = Boolean(guest) && guestUsed >= (guest?.limit ?? Infinity);
   // The patient can always type. The notice shows once they start writing or try to send.
@@ -208,8 +227,11 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
             content: card ? `${textContent}\n${orientationNote(card)}` : textContent,
           })),
       }),
-    }).then((response) => {
-      if (response.status === 403) throw new GuestLimitError();
+    }).then(async (response) => {
+      if (response.status === 403) {
+        const body = (await response.json().catch(() => null)) as { guest?: GuestUsage } | null;
+        throw new GuestLimitError(body?.guest);
+      }
       if (!response.ok) throw new Error("triage failed");
       return response.json() as Promise<TriageResponse>;
     });
@@ -224,7 +246,10 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
     if (outcome.status === "fulfilled") {
       const data = outcome.value;
       const replyId = crypto.randomUUID();
-      if (data.guest) setGuestUsed(data.guest.used);
+      if (data.guest) {
+        setGuestUsed(data.guest.used);
+        setGuestResetAt(data.guest.resetAt);
+      }
       setResult(data);
       setMessages((current) => [...current, { id: replyId, role: "assistant", content: data.message, card: data.card }]);
       if (data.kind === "red_flag") setAlertIds((current) => [...current, replyId]);
@@ -232,7 +257,8 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
     } else if (outcome.reason instanceof GuestLimitError) {
       // The server's count wins over the screen's. The message was not answered, so it goes back to the input.
       const unanswered = history[history.length - 1];
-      setGuestUsed(guest?.limit ?? 0);
+      setGuestUsed(outcome.reason.guest?.used ?? guest?.limit ?? 0);
+      setGuestResetAt(outcome.reason.guest?.resetAt);
       setMessages(history.slice(0, -1));
       if (unanswered?.role === "user") setDraft(unanswered.content);
       setLimitAttempted(true);
@@ -381,6 +407,7 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
           nombre={nombre}
           hideMascot={liveActive}
           guestLeft={guest ? Math.max(0, guest.limit - guestUsed) : undefined}
+          guestWaitMs={waitLeft}
           {...conversationProps}
         />
 
@@ -388,15 +415,16 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
           <ChatHeader mascotState={mascotState} onReset={reset} {...conversationProps} />
 
           {/* Voice mode: only the mascot, as at the start. Empty: the greeting. Started: the conversation scrolls here. */}
-          <div className="flex min-h-0 flex-1 flex-col">
+          <div className="relative flex min-h-0 flex-1 flex-col">
             {liveActive ? (
               <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-end px-4 pb-6 sm:px-8">
                 <LiveStage phase={live.phase} levelRef={live.levelRef} notice={failed ? FAILURE_TEXT : live.notice} />
               </div>
             ) : started ? (
               <SmoothScrollArea
-                className="flex-1 overflow-y-auto"
+                className="scroll-soft scroll-fade flex-1 overflow-y-auto"
                 contentClassName="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 sm:px-8"
+                overlay={<ScrollEdge />}
               >
                 <MessageList
                   key={activeId}
@@ -417,7 +445,7 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
 
           {/* Glides between the middle of the screen and the bottom as the layout changes. */}
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 pt-2 sm:px-8">
-            {showLimit && <GuestLimitNotice />}
+            {showLimit && <GuestLimitNotice waitMs={waitLeft} />}
             {live.error && !liveActive && (
               <p role="alert" className="text-center text-sm text-text-muted">
                 {live.error}

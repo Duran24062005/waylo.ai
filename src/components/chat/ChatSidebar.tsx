@@ -21,6 +21,8 @@ interface ChatSidebarProps {
   hideMascot?: boolean;
   /** Free replies a visitor has left. Undefined for signed-in users. */
   guestLeft?: number;
+  /** Milliseconds until a visitor who used up the free replies gets them back. */
+  guestWaitMs?: number | null;
   conversations: Conversation[];
   activeId: string;
   onOpenConversation: (id: string) => void;
@@ -36,6 +38,7 @@ export function ChatSidebar({
   nombre,
   hideMascot,
   guestLeft,
+  guestWaitMs,
   conversations,
   activeId,
   onOpenConversation,
@@ -68,7 +71,8 @@ export function ChatSidebar({
       {/* Takes the free height and scrolls, so many conversations never push the profile off screen. */}
       <div className="flex min-h-0 flex-1 flex-col gap-3">
         <h2 className="font-heading text-sm font-semibold text-text">Conversaciones</h2>
-        <SmoothScrollArea className="scroll-soft -mx-2 min-h-0 flex-1 overflow-y-auto px-2">
+        {/* The padding (undone by the negative margin) leaves room for the rename field's halo, which a scroll area would clip. */}
+        <SmoothScrollArea className="scroll-soft -m-2 min-h-0 flex-1 overflow-y-auto p-2">
           <ConversationList
             conversations={conversations}
             activeId={activeId}
@@ -80,7 +84,7 @@ export function ChatSidebar({
         </SmoothScrollArea>
       </div>
 
-      <UserMenu nombre={nombre} guestLeft={guestLeft} />
+      <UserMenu nombre={nombre} guestLeft={guestLeft} guestWaitMs={guestWaitMs} />
     </aside>
   );
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Logout01Icon, UserIcon } from "@hugeicons/core-free-icons";
+import { formatWait } from "@/lib/wait";
 
 function initials(nombre: string) {
   return nombre
@@ -15,8 +16,8 @@ function initials(nombre: string) {
     .join("");
 }
 
-function freeRepliesLabel(left: number) {
-  if (left <= 0) return "Sin respuestas gratis";
+function freeRepliesLabel(left: number, waitMs?: number | null) {
+  if (left <= 0) return waitMs == null ? "Sin respuestas gratis" : `Vuelven en ${formatWait(waitMs)}`;
   return left === 1 ? "1 respuesta gratis" : `${left} respuestas gratis`;
 }
 
@@ -28,11 +29,13 @@ interface UserMenuProps {
   nombre?: string | null;
   /** Free replies a visitor has left. Not used for signed-in users. */
   guestLeft?: number;
+  /** Milliseconds until the free replies come back, for a visitor who used them up. */
+  guestWaitMs?: number | null;
   className?: string;
 }
 
 /** The profile card: one frame, with sign-out inside it for signed-in users. */
-export function UserMenu({ nombre, guestLeft, className }: UserMenuProps) {
+export function UserMenu({ nombre, guestLeft, guestWaitMs, className }: UserMenuProps) {
   const router = useRouter();
   const [leaving, setLeaving] = useState(false);
 
@@ -61,7 +64,7 @@ export function UserMenu({ nombre, guestLeft, className }: UserMenuProps) {
           </p>
           {/* Not truncated: the free-replies count is the one thing a visitor must be able to read. */}
           <p className="text-sm leading-snug text-text-muted">
-            {nombre || guestLeft === undefined ? "Gratis" : freeRepliesLabel(guestLeft)}
+            {nombre || guestLeft === undefined ? "Gratis" : freeRepliesLabel(guestLeft, guestWaitMs)}
           </p>
         </div>
         {nombre ? (

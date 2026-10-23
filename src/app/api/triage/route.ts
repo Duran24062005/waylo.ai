@@ -1,12 +1,12 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import {
-  decodeGuestCount,
-  encodeGuestCount,
+  afterReply,
   GUEST_COOKIE,
   GUEST_COOKIE_MAX_AGE,
   guestLimitReached,
   guestUsage,
+  readGuest,
 } from "@/lib/guest";
 import { getSession } from "@/lib/session";
 import { runTriage, TriageUnavailableError } from "@/lib/triage";
@@ -28,12 +28,15 @@ export async function POST(request: Request) {
   }
 
   // Signed-in users have no limit. Visitors get a few free replies, counted in a cookie the server signs.
+  // Once they are used up the visitor waits, and the replies come back when the signed time passes.
   const session = await getSession();
+  const now = Date.now();
   let used = 0;
   if (!session) {
-    used = decodeGuestCount((await cookies()).get(GUEST_COOKIE)?.value);
+    const state = readGuest((await cookies()).get(GUEST_COOKIE)?.value, now);
+    used = state.used;
     if (guestLimitReached(used)) {
-      return NextResponse.json({ error: "guest_limit", guest: guestUsage(used) }, { status: 403 });
+      return NextResponse.json({ error: "guest_limit", guest: guestUsage(state) }, { status: 403 });
     }
   }
 
@@ -46,17 +49,18 @@ export async function POST(request: Request) {
     if (session) return NextResponse.json(result);
 
     // The fixed alarm text is not an AI reply, so it never uses up the free replies.
-    const counted = result.kind === "red_flag" ? used : used + 1;
-    const response = NextResponse.json({ ...result, guest: guestUsage(counted) });
-    if (counted !== used) {
-      response.cookies.set(GUEST_COOKIE, encodeGuestCount(counted), {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
-        maxAge: GUEST_COOKIE_MAX_AGE,
-      });
+    if (result.kind === "red_flag") {
+      return NextResponse.json({ ...result, guest: guestUsage({ used }) });
     }
+    const { cookie, ...state } = afterReply(used, now);
+    const response = NextResponse.json({ ...result, guest: guestUsage(state) });
+    response.cookies.set(GUEST_COOKIE, cookie, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: GUEST_COOKIE_MAX_AGE,
+    });
     return response;
   } catch (error) {
     if (error instanceof TriageUnavailableError) {
