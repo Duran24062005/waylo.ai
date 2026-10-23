@@ -16,10 +16,27 @@ export interface ProviderSite {
   telefono: string;
 }
 
+/**
+ * A file attached to a message. The name and kind are saved with the conversation; the content (a photo or the text of
+ * a document) lives in memory while the page is open and is never stored, so it is gone after a reload.
+ */
+export interface Attachment {
+  id: string;
+  name: string;
+  kind: "image" | "document";
+  /** The text of a document. */
+  text?: string;
+  /** A photo, as a data URL. */
+  dataUrl?: string;
+  /** The document was longer than what is kept. */
+  truncated?: boolean;
+}
+
 export interface ChatMessage {
   id: string;
   role: ChatRole;
   content: string;
+  attachments?: Attachment[];
   /** Orientation attached to this reply, shown right under its text. */
   card?: OrientationCard;
 }

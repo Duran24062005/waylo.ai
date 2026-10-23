@@ -10,9 +10,10 @@ import {
 } from "@/lib/guest";
 import { getMessages } from "@/i18n/server";
 import { isLocale } from "@/i18n/locales";
+import { sanitizeAttachments } from "@/lib/attachments";
 import { displayName } from "@/lib/profile";
 import { getSession } from "@/lib/session";
-import { runTriage, TriageUnavailableError } from "@/lib/triage";
+import { runTriage, TriageUnavailableError, type TriageMessage } from "@/lib/triage";
 import type { ChatMessage } from "@/lib/types";
 import { readUsage, saveUsage, usageStatus, withReply, type UsageRow } from "@/lib/usage";
 
@@ -22,7 +23,7 @@ export const maxDuration = 60;
 export async function POST(request: Request) {
   const { locale: appLocale, t } = await getMessages();
   const body = (await request.json()) as {
-    messages?: Pick<ChatMessage, "role" | "content">[];
+    messages?: (Pick<ChatMessage, "role" | "content"> & { attachments?: unknown })[];
     eps?: string;
     /** The reply the patient asked to have redone. */
     avoid?: unknown;
@@ -33,6 +34,16 @@ export async function POST(request: Request) {
 
   if (!body.messages?.length) {
     return NextResponse.json({ error: t.server.errors.missingMessage }, { status: 400 });
+  }
+
+  // Files are checked here whatever the page did: a request can be written by hand.
+  const turns: TriageMessage[] = [];
+  for (const { role, content, attachments } of body.messages.slice(-12)) {
+    const checked = sanitizeAttachments(attachments);
+    if (!checked || typeof content !== "string" || (role !== "user" && role !== "assistant")) {
+      return NextResponse.json({ error: t.server.errors.attachmentsInvalid }, { status: 400 });
+    }
+    turns.push({ role, content, attachments: checked });
   }
 
   // Visitors get a few free replies, counted in a cookie the server signs. Once they are used up the visitor waits,
@@ -55,7 +66,7 @@ export async function POST(request: Request) {
 
   try {
     const result = await runTriage({
-      messages: body.messages.slice(-12),
+      messages: turns,
       eps: body.eps,
       avoid: typeof body.avoid === "string" ? body.avoid : undefined,
       locale,

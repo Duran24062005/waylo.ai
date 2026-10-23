@@ -13,6 +13,7 @@ import {
   MessageList,
 } from "@/components/chat";
 import { UsageLimitNotice } from "@/components/chat/UsageLimitNotice";
+import { useAttachments } from "@/components/chat/useAttachments";
 import { LiveControls, LiveStage, MASCOT_STATE, useLiveVoice } from "@/components/live";
 import type { MascotState } from "@/components/mascot";
 import { ScrollEdge } from "@/components/chat/ScrollEdge";
@@ -31,8 +32,9 @@ import {
   togglePin,
   writeConversations,
 } from "@/lib/conversations";
+import type { WireAttachment } from "@/lib/attachments";
 import { orientationNote } from "@/lib/orientation-note";
-import type { AccountUsage, ChatMessage, Conversation, GuestUsage, TriageResponse } from "@/lib/types";
+import type { AccountUsage, Attachment, ChatMessage, Conversation, GuestUsage, TriageResponse } from "@/lib/types";
 
 // The empty chat starts with this marker message. It is never shown or sent: the greeting on screen is its own component.
 const WELCOME: ChatMessage = { id: "welcome", role: "assistant", content: "" };
@@ -56,6 +58,21 @@ class UsageLimitError extends Error {
   constructor(readonly usage?: AccountUsage) {
     super("usage_limit");
   }
+}
+
+/** What is saved of a file: its name and kind. The content (a photo, a document's text) stays in memory only. */
+function withoutContent(message: ChatMessage): ChatMessage {
+  if (!message.attachments) return message;
+  return { ...message, attachments: message.attachments.map(({ id, name, kind }) => ({ id, name, kind })) };
+}
+
+/** The files of a message as the triage route takes them. Only the newest message sends its photos. */
+function wireAttachments(attachments: Attachment[] | undefined, withPhotos: boolean): WireAttachment[] | undefined {
+  if (!attachments?.length) return undefined;
+  return attachments.flatMap(({ name, kind, text, dataUrl, truncated }): WireAttachment[] => {
+    if (kind === "document") return text ? [{ kind, name, text, truncated }] : [];
+    return [{ kind, name, dataUrl: withPhotos ? dataUrl : undefined }];
+  });
 }
 
 /** Browsers can block storage (private windows, blocked site data), so every access is guarded. */
@@ -83,6 +100,7 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
   const { t } = useI18n();
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
   const [draft, setDraft] = useState("");
+  const attached = useAttachments();
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<TriageResponse | null>(null);
   const [alertIds, setAlertIds] = useState<string[]>([]);
@@ -144,8 +162,9 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
   const accountBlocked = Boolean(blocked) && blockLeft !== 0;
 
   // The patient can always type. The notice shows once they start writing or try to send.
-  const showLimit = limitReached && (draft.trim().length > 0 || limitAttempted);
-  const showUsageLimit = accountBlocked && (draft.trim().length > 0 || limitAttempted);
+  const writing = draft.trim().length > 0 || attached.items.length > 0;
+  const showLimit = limitReached && (writing || limitAttempted);
+  const showUsageLimit = accountBlocked && (writing || limitAttempted);
 
   // What the patient says is sent exactly like typed text, so both get the same kind of answer.
   const live = useLiveVoice({ onUtterance: (text, language) => send(text, language ?? undefined), busy: pending });
@@ -211,7 +230,7 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
           title: existing?.title ?? fallbackTitle(firstUser?.content ?? ""),
           createdAt: existing?.createdAt ?? now,
           updatedAt: now,
-          messages: messages.filter((message) => message.id !== "welcome"),
+          messages: messages.filter((message) => message.id !== "welcome").map(withoutContent),
           alertIds,
           errorIds,
         },
@@ -243,6 +262,13 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
     }
   }
 
+  /** A message that was not answered goes back to the input, with its files. Words the chat added for a file alone are dropped. */
+  function returnToInput(message: ChatMessage) {
+    const onlyFiles = Boolean(message.attachments?.length) && message.content === t.chat.attach.sentOnly;
+    setDraft(onlyFiles ? "" : message.content);
+    attached.restore(message.attachments);
+  }
+
   async function request(history: ChatMessage[], avoid?: string, language?: Locale) {
     replyLanguage.current = language;
     const requestId = requestIdRef.current + 1;
@@ -262,9 +288,10 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
         messages: history
           .filter((message) => message.id !== "welcome" && !errorIds.includes(message.id))
           // The model never sees the card, so it gets a note about the orientation it already gave.
-          .map(({ role, content: textContent, card }) => ({
+          .map(({ role, content: textContent, card, attachments }, index, kept) => ({
             role,
             content: card ? `${textContent}\n${orientationNote(card)}` : textContent,
+            attachments: wireAttachments(attachments, index === kept.length - 1),
           })),
       }),
     }).then(async (response) => {
@@ -301,7 +328,7 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
       const unanswered = history[history.length - 1];
       if (outcome.reason.usage) setUsage(outcome.reason.usage);
       setMessages(history.slice(0, -1));
-      if (unanswered?.role === "user") setDraft(unanswered.content);
+      if (unanswered?.role === "user") returnToInput(unanswered);
       setLimitAttempted(true);
     } else if (outcome.reason instanceof GuestLimitError) {
       // The server's count wins over the screen's. The message was not answered, so it goes back to the input.
@@ -309,7 +336,7 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
       setGuestUsed(outcome.reason.guest?.used ?? guest?.limit ?? 0);
       setGuestResetAt(outcome.reason.guest?.resetAt);
       setMessages(history.slice(0, -1));
-      if (unanswered?.role === "user") setDraft(unanswered.content);
+      if (unanswered?.role === "user") returnToInput(unanswered);
       setLimitAttempted(true);
     } else {
       const failureId = crypto.randomUUID();
@@ -319,8 +346,9 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
     setPending(false);
   }
 
-  function send(text: string, language?: Locale) {
-    const content = text.trim();
+  function send(text: string, language?: Locale, files: Attachment[] = []) {
+    // A message can be only files: the chat words it, so the AI and the conversation both have a sentence to answer.
+    const content = text.trim() || (files.length > 0 ? t.chat.attach.sentOnly : "");
     if (!content || pending) return;
 
     if (limitReached || accountBlocked) {
@@ -331,9 +359,13 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
     }
 
     const isFirstMessage = !messages.some((message) => message.role === "user");
-    const nextMessages = [...messages, { id: crypto.randomUUID(), role: "user" as const, content }];
+    const nextMessages = [
+      ...messages,
+      { id: crypto.randomUUID(), role: "user" as const, content, ...(files.length > 0 && { attachments: files }) },
+    ];
     setMessages(nextMessages);
     setDraft("");
+    attached.clear();
     void request(nextMessages, undefined, language);
     if (isFirstMessage) void requestTitle(activeId, content);
   }
@@ -371,6 +403,7 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
     setActiveId(crypto.randomUUID());
     setMessages([WELCOME]);
     setDraft("");
+    attached.clear();
     setPending(false);
     setResult(null);
     setAlertIds([]);
@@ -397,6 +430,7 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
     setAlertIds(target.alertIds);
     setErrorIds(target.errorIds);
     setDraft("");
+    attached.clear();
     setPending(false);
     setResult(null);
     setSpeaking(false);
@@ -419,7 +453,8 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    send(draft);
+    if (attached.busy) return;
+    send(draft, undefined, attached.ready);
   }
 
   const lastMessage = messages[messages.length - 1];
@@ -517,6 +552,10 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
                   onSubmit={onSubmit}
                   onFocus={() => setFocused(true)}
                   onBlur={() => setFocused(false)}
+                  attachments={attached.items}
+                  attachNotice={attached.notice}
+                  onAttach={attached.add}
+                  onRemoveAttachment={attached.remove}
                 />
               </div>
               <div className="ml-3 shrink-0">

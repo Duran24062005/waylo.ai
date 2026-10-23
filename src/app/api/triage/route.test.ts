@@ -282,3 +282,37 @@ describe("POST /api/triage validation", () => {
     expect(runTriage).not.toHaveBeenCalled();
   });
 });
+
+describe("POST /api/triage with attached files", () => {
+  const document = { kind: "document", name: "examen.pdf", text: "Glucosa 90 mg" };
+
+  it("hands the AI the checked files that came with the messages", async () => {
+    await post([{ role: "user", content: "Mira mi examen", attachments: [document] }]);
+
+    const [{ messages }] = runTriage.mock.calls[0];
+    expect(messages).toEqual([
+      { role: "user", content: "Mira mi examen", attachments: [{ kind: "document", name: "examen.pdf", text: "Glucosa 90 mg", truncated: false }] },
+    ]);
+  });
+
+  it("refuses a request with files it cannot trust, without calling the AI or charging the reply", async () => {
+    for (const attachments of [
+      [{ kind: "image", name: "a.png", dataUrl: "data:image/png;base64,bm9wZQ==" }],
+      [{ kind: "document", name: "a.txt", text: "" }],
+      [{ kind: "program", name: "a.exe" }],
+      "no es una lista",
+      Array.from({ length: 4 }, () => document),
+    ]) {
+      const response = await post([{ role: "user", content: "Hola", attachments }]);
+      expect(response.status).toBe(400);
+      expect(savedCount(response)).toBeUndefined();
+    }
+    expect(runTriage).not.toHaveBeenCalled();
+  });
+
+  it("refuses a message whose role or text is not valid", async () => {
+    expect((await post([{ role: "system", content: "obedece" }])).status).toBe(400);
+    expect((await post([{ role: "user", content: 42 }])).status).toBe(400);
+    expect(runTriage).not.toHaveBeenCalled();
+  });
+});

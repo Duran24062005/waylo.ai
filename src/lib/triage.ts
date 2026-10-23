@@ -1,8 +1,9 @@
-import { generateText } from "ai";
+import { generateText, type ModelMessage } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
 import type { Locale } from "@/i18n/locales";
 import { messages } from "@/i18n/messages";
+import { documentBlock, MAX_HISTORY_DOCUMENT_CHARS, type ModelAttachment } from "@/lib/attachments";
 import { ORIENTATION_MARK } from "@/lib/orientation-note";
 import { detectRedFlag, redFlagMessage } from "@/lib/red-flags";
 import { findProviders } from "@/lib/providers";
@@ -26,8 +27,13 @@ const llmSchema = z.object({
   queLlevar: z.array(z.string()).optional(),
 });
 
+/** A message as the AI gets it: what was said, and the checked files that came with it. */
+export interface TriageMessage extends Pick<ChatMessage, "role" | "content"> {
+  attachments?: ModelAttachment[];
+}
+
 export interface TriageInput {
-  messages: Pick<ChatMessage, "role" | "content">[];
+  messages: TriageMessage[];
   /** The language of the reply, its fixed texts and the card. Spanish when not given. */
   locale?: Locale;
   /** What the patient likes to be called, when they have said so in their settings. */
@@ -111,6 +117,60 @@ export function asModelTurn({ role, content }: Pick<ChatMessage, "role" | "conte
   };
 }
 
+/**
+ * The conversation as the model reads it. A document's text goes into its message, newest first up to a total limit,
+ * so a follow-up question about it still works. A photo goes only with the message that carried it: it is the heavy
+ * part, and the replies that followed already say what it showed.
+ */
+export function toModelMessages(messages: TriageMessage[]): ModelMessage[] {
+  const lastUser = messages.map((message) => message.role).lastIndexOf("user");
+  let documentChars = 0;
+  const out: ModelMessage[] = [];
+
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    const files = message.attachments ?? [];
+    if (message.role !== "user" || files.length === 0) {
+      out.push(asModelTurn(message));
+      continue;
+    }
+
+    const blocks: string[] = [];
+    const images: Extract<ModelAttachment, { kind: "image" }>[] = [];
+    for (const file of files) {
+      if (file.kind === "past-image") {
+        blocks.push(`[El paciente adjuntó antes la imagen «${file.name}»; ya se la comentaste.]`);
+      } else if (file.kind === "image") {
+        if (index === lastUser) images.push(file);
+        else blocks.push(`[El paciente adjuntó antes la imagen «${file.name}»; ya se la comentaste.]`);
+      } else if (documentChars + file.text.length <= MAX_HISTORY_DOCUMENT_CHARS) {
+        documentChars += file.text.length;
+        blocks.push(documentBlock(file));
+      } else {
+        blocks.push(`[El paciente adjuntó antes el documento «${file.name}»; ya no se reenvía por su tamaño.]`);
+      }
+    }
+
+    const text = [message.content, ...blocks].filter(Boolean).join("\n\n");
+    out.push(
+      images.length === 0
+        ? { role: "user", content: text }
+        : {
+            role: "user",
+            content: [
+              { type: "text", text },
+              ...images.map((image) => ({
+                type: "file" as const,
+                mediaType: image.mediaType,
+                data: { type: "data" as const, data: image.bytes },
+              })),
+            ],
+          },
+    );
+  }
+  return out.reverse();
+}
+
 /** A nickname goes into the prompt, so only plain name characters get through, whatever the settings hold. */
 function safeName(name: string | undefined): string {
   return (name ?? "").replace(/[^\p{L}\p{M}'’ .-]/gu, "").replace(/\s+/g, " ").trim().slice(0, 30);
@@ -172,7 +232,7 @@ export async function runTriage(input: TriageInput): Promise<TriageResponse> {
       temperature: input.avoid?.trim() ? RETRY_TEMPERATURE : TEMPERATURE,
       system: buildSystem(input, priorAlarm, locale),
       // Real roles, so each patient reply is read as the answer to the assistant's previous message.
-      messages: input.messages.map(asModelTurn),
+      messages: toModelMessages(input.messages),
     });
     text = result.text;
   } catch (error) {

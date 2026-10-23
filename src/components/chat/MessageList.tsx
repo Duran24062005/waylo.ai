@@ -10,6 +10,7 @@ import { duration, easing } from "@/design/motion";
 import { useT } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/lib/types";
+import { AttachmentChip } from "./AttachmentChip";
 import { MessageActions } from "./MessageActions";
 import { ThinkingLoader } from "./ThinkingLoader";
 import { TypewriterText } from "./TypewriterText";
@@ -137,6 +138,15 @@ export function MessageList({
           if (isUser) {
             return (
               <motion.div key={message.id} {...enter} className="group flex flex-col items-end gap-1 pl-10 sm:pl-24">
+                {message.attachments && message.attachments.length > 0 && (
+                  <ul className="flex max-w-full flex-wrap justify-end gap-2">
+                    {message.attachments.map((attachment) => (
+                      <li key={attachment.id} className="min-w-0 max-w-full">
+                        <AttachmentChip attachment={attachment} className="sm:max-w-64" />
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <p className="max-w-full min-w-0 break-words rounded-xl rounded-br-sm bg-accent px-5 py-3 text-base text-accent-foreground shadow-solid">
                   {message.content}
                 </p>
