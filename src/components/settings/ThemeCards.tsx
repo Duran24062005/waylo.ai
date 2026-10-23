@@ -103,8 +103,8 @@ interface ThemeCardsProps {
 }
 
 /**
- * One card per theme, each with a miniature of the chat in that theme. The chosen one is ringed, and the ring slides
- * from card to card. The arrow keys move the choice.
+ * One card per theme, each with a miniature of the chat in that theme. No borders: the cards sit in a sunken tray, and
+ * the chosen one is raised on a pill that slides from card to card. The arrow keys move the choice.
  */
 export function ThemeCards({ label, value, onChange, options }: ThemeCardsProps) {
   const ringId = useId();
@@ -122,7 +122,7 @@ export function ThemeCards({ label, value, onChange, options }: ThemeCardsProps)
   }
 
   return (
-    <div role="radiogroup" aria-label={label} onKeyDown={onKeyDown} className="grid grid-cols-3 gap-2 sm:gap-3">
+    <div role="radiogroup" aria-label={label} onKeyDown={onKeyDown} className="grid grid-cols-3 gap-1 rounded-2xl bg-surface p-1.5 shadow-inset">
       {options.map((option, index) => {
         const active = option.value === value;
         return (
@@ -137,7 +137,7 @@ export function ThemeCards({ label, value, onChange, options }: ThemeCardsProps)
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(option.value)}
             className={cn(
-              "group lift lift-sm relative flex cursor-pointer flex-col gap-2.5 rounded-xl p-1.5 pb-2.5",
+              "group relative flex cursor-pointer flex-col gap-2.5 rounded-xl p-1.5 pb-2.5",
               "focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
             )}
           >
@@ -145,7 +145,7 @@ export function ThemeCards({ label, value, onChange, options }: ThemeCardsProps)
               <motion.span
                 layoutId={ringId}
                 transition={{ duration: duration.base, ease: easing.standard }}
-                className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-text"
+                className="pointer-events-none absolute inset-0 rounded-xl bg-surface-raised shadow-raised"
               />
             ) : null}
 
@@ -155,7 +155,7 @@ export function ThemeCards({ label, value, onChange, options }: ThemeCardsProps)
 
             <span
               className={cn(
-                "flex items-center justify-center gap-1.5 font-heading text-sm font-semibold transition-colors duration-[var(--duration-base)] ease-standard",
+                "relative flex items-center justify-center gap-1.5 font-heading text-sm font-semibold transition-colors duration-[var(--duration-base)] ease-standard",
                 active ? "text-text" : "text-text-muted group-hover:text-text",
               )}
             >
