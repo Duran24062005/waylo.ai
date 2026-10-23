@@ -40,6 +40,22 @@ const llmSchema = z.object({
 export interface TriageInput {
   messages: Pick<ChatMessage, "role" | "content">[];
   eps?: string;
+  /** Set when the patient pressed "Reintentar": the reply they were not happy with, so the new one is different. */
+  avoid?: string;
+}
+
+const TEMPERATURE = 0.4;
+// A retry needs room to say it another way, so the model is allowed to vary more.
+const RETRY_TEMPERATURE = 0.9;
+const MAX_AVOID_CHARS = 800;
+
+function retryNote(previous: string): string {
+  return (
+    "El paciente pidió otra respuesta a su último mensaje, porque la anterior no le convenció o no era lo que esperaba. " +
+    `Tu respuesta anterior fue: «${previous.slice(0, MAX_AVOID_CHARS)}». ` +
+    "Responde a esa misma consulta de otra manera: un enfoque distinto, otras palabras y otro orden, sin repetir frases ni la misma pregunta. " +
+    "Mantén el mismo criterio clínico: no cambies el nivel de atención ni la urgencia sin una razón nueva."
+  );
 }
 
 /** The AI could not answer. The route turns it into an error so the chat offers a retry, not a scripted reply. */
@@ -115,6 +131,8 @@ function buildSystem(input: TriageInput, priorAlarm: boolean): string {
     notes.push("Ya preguntaste suficiente. Responde ahora con listo:true y la orientación, con lo que el paciente dijo.");
   }
 
+  if (input.avoid?.trim()) notes.push(retryNote(input.avoid.trim()));
+
   return `${SYSTEM_PROMPT}\n\n${notes.join("\n\n")}`;
 }
 
@@ -138,7 +156,7 @@ export async function runTriage(input: TriageInput): Promise<TriageResponse> {
   try {
     const result = await generateText({
       model: reto.chat(process.env.RETO_MODEL || DEFAULT_MODEL),
-      temperature: 0.4,
+      temperature: input.avoid?.trim() ? RETRY_TEMPERATURE : TEMPERATURE,
       system: buildSystem(input, priorAlarm),
       // Real roles, so each patient reply is read as the answer to the assistant's previous message.
       messages: input.messages.map(asModelTurn),

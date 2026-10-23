@@ -19,6 +19,8 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     messages?: Pick<ChatMessage, "role" | "content">[];
     eps?: string;
+    /** The reply the patient asked to have redone. */
+    avoid?: unknown;
   };
 
   if (!body.messages?.length) {
@@ -39,6 +41,7 @@ export async function POST(request: Request) {
     const result = await runTriage({
       messages: body.messages.slice(-12),
       eps: body.eps,
+      avoid: typeof body.avoid === "string" ? body.avoid : undefined,
     });
     if (session) return NextResponse.json(result);
 

@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Mascot, MascotMark } from "@/components/mascot";
 import { OrientationCard } from "@/components/OrientationCard";
+import { useSmoothScroll } from "@/components/SmoothScrollArea";
 import { buttonSoft } from "@/components/ui/buttons";
-import { duration, easing, prefersReducedMotion } from "@/design/motion";
+import { duration, easing } from "@/design/motion";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/lib/types";
 import { MessageActions } from "./MessageActions";
@@ -52,13 +53,13 @@ interface AssistantTextProps {
 
 function AssistantText({ message, animate, isAlert, isError, isLastError, pending, onRetry, onRegenerate }: AssistantTextProps) {
   const [done, setDone] = useState(!animate);
-  const cardRef = useRef<HTMLDivElement>(null);
+  const smoothScroll = useSmoothScroll();
   const showCard = Boolean(message.card) && done;
 
   // The card appears once the text has been typed, so bring it into view then.
   useEffect(() => {
-    if (showCard) cardRef.current?.scrollIntoView({ block: "nearest", behavior: prefersReducedMotion() ? "auto" : "smooth" });
-  }, [showCard]);
+    if (showCard) smoothScroll?.scrollToEnd();
+  }, [showCard, smoothScroll]);
 
   return (
     <div className="flex min-w-0 flex-col items-start gap-2">
@@ -76,7 +77,6 @@ function AssistantText({ message, animate, isAlert, isError, isLastError, pendin
       </p>
       {message.card && done && (
         <motion.div
-          ref={cardRef}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: duration.base, ease: easing.standard }}
@@ -110,13 +110,16 @@ export function MessageList({
   onRetry,
   onRegenerate,
 }: MessageListProps) {
-  const endRef = useRef<HTMLDivElement>(null);
+  const smoothScroll = useSmoothScroll();
   // Replies present on mount show at once; only later ones are typed.
   const initialIds = useRef(new Set(messages.map((message) => message.id)));
+  const firstScroll = useRef(true);
 
+  // Follows the conversation to its end. The first time, when a conversation is opened, it jumps instead of gliding.
   useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "end", behavior: prefersReducedMotion() ? "auto" : "smooth" });
-  }, [messages.length, pending]);
+    smoothScroll?.scrollToEnd(firstScroll.current);
+    firstScroll.current = false;
+  }, [messages.length, pending, smoothScroll]);
 
   const lastErrorId = errorMessageIds[errorMessageIds.length - 1];
 
@@ -167,7 +170,6 @@ export function MessageList({
           </motion.div>
         )}
       </AnimatePresence>
-      <div ref={endRef} aria-hidden className="scroll-mb-8" />
     </section>
   );
 }

@@ -15,14 +15,16 @@
  *              one gentle tilt. No flashing, no loud shaking. The text explains the problem.
  * - private:   The person is typing a password. The mascot turns away to the left and closes
  *              its eyes, and does not follow the pointer. It returns to normal when the field loses focus.
- * - muted:     The voice mode's microphone is off. The eyes shut and it keeps facing the person,
- *              breathing slowly. Unlike "private" it does not turn away: it is resting, not looking elsewhere.
+ * - muted:     The voice mode's microphone is off. The eyes stay open and it keeps facing the person;
+ *              a mute icon (a solid speaker with a cross) pops in where the mouth would be.
+ * - resting:   Nothing is happening and nobody is writing. The eyes shut, facing front, and three Z
+ *              float up from it. It wakes (opens its eyes) as soon as the input gets focus.
  * - success:   A step completed well (e.g. an orientation was delivered). The only
  *              state allowed to use --ease-emphasis. Must not appear alongside "alert".
  *
  * All states must respect prefers-reduced-motion (see src/design/motion.ts).
  */
-export type MascotState = "idle" | "listening" | "thinking" | "speaking" | "alert" | "success" | "error" | "private" | "muted";
+export type MascotState = "idle" | "listening" | "thinking" | "speaking" | "alert" | "success" | "error" | "private" | "muted" | "resting";
 
 export interface MascotProps {
   state: MascotState;

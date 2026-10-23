@@ -11,4 +11,5 @@ export const STATUS_COPY: Record<MascotState, string> = {
   error: "Algo salió mal",
   private: "No estoy mirando",
   muted: "Micrófono silenciado",
+  resting: "Descansando",
 };

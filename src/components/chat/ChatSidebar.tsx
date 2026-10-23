@@ -5,6 +5,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Add01Icon } from "@hugeicons/core-free-icons";
 import { Mascot, type MascotState } from "@/components/mascot";
 import { UserMenu } from "@/components/auth/UserMenu";
+import { SmoothScrollArea } from "@/components/SmoothScrollArea";
 import { ThemeToggle } from "@/components/theme";
 import { buttonSoft } from "@/components/ui/buttons";
 import { cn } from "@/lib/utils";
@@ -67,7 +68,7 @@ export function ChatSidebar({
       {/* Takes the free height and scrolls, so many conversations never push the profile off screen. */}
       <div className="flex min-h-0 flex-1 flex-col gap-3">
         <h2 className="font-heading text-sm font-semibold text-text">Conversaciones</h2>
-        <div data-lenis-prevent className="scroll-soft -mx-2 min-h-0 flex-1 overflow-y-auto px-2">
+        <SmoothScrollArea className="scroll-soft -mx-2 min-h-0 flex-1 overflow-y-auto px-2">
           <ConversationList
             conversations={conversations}
             activeId={activeId}
@@ -76,7 +77,7 @@ export function ChatSidebar({
             onTogglePin={onTogglePinConversation}
             onDelete={onDeleteConversation}
           />
-        </div>
+        </SmoothScrollArea>
       </div>
 
       <UserMenu nombre={nombre} guestLeft={guestLeft} />

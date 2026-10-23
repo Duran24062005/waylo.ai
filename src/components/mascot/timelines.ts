@@ -22,6 +22,10 @@ export interface MascotTargets {
   shut: SVGElement[];
   /** Current turn in degrees. GSAP tweens it and the eyes follow. */
   turn: { value: number };
+  /** The mute icon, where the mouth would be. */
+  mute: SVGElement;
+  /** The three Z of a resting mascot, smallest first. */
+  zzz: SVGElement[];
 }
 
 const STANDARD = "waylo-standard";
@@ -41,7 +45,7 @@ function ensureEases() {
 export function initOrigins(t: MascotTargets) {
   gsap.set(t.body, { svgOrigin: "60 58" });
   gsap.set(t.shadow, { svgOrigin: "60 108" });
-  gsap.set([t.lids, t.look, ...t.eyes, ...t.opens, ...t.shut], { transformOrigin: "50% 50%" });
+  gsap.set([t.lids, t.look, ...t.eyes, ...t.opens, ...t.shut, t.mute, ...t.zzz], { transformOrigin: "50% 50%" });
   t.orbits.forEach((orbit, i) => gsap.set(orbit, { svgOrigin: `${EYE_X[i]} ${EYE_Y}` }));
 }
 
@@ -68,6 +72,9 @@ export function applyPose(t: MascotTargets, state: MascotState) {
   t.turn.value = pose.turn;
   placeEyes(t);
   setClosed(t, pose.closed);
+  gsap.set(t.mute, { opacity: pose.mute, scale: pose.mute ? 1 : 0.4, rotation: 0 });
+  // Without motion, a resting mascot shows its Z standing still.
+  gsap.set(t.zzz, { opacity: pose.zzz ? 0.85 : 0, x: 0, y: 0, scale: 1, rotation: 0 });
 }
 
 function settleTo(tl: gsap.core.Timeline, t: MascotTargets, pose: Pose, seconds: number) {
@@ -77,6 +84,15 @@ function settleTo(tl: gsap.core.Timeline, t: MascotTargets, pose: Pose, seconds:
     .to(t.lids, { scaleY: 1, duration: seconds, ease }, 0)
     .to(t.look, { x: pose.lookX, duration: seconds, ease }, 0)
     .to(t.eyes, { scaleX: pose.eyeScaleX, scaleY: pose.eyeScaleY, duration: seconds, ease }, 0);
+
+  // The mute icon pops in with a small bounce; it shrinks away with the standard ease.
+  if (pose.mute) {
+    tl.to(t.mute, { opacity: 1, scale: 1, rotation: 0, duration: seconds * 1.4, ease: "back.out(2.4)" }, seconds * 0.3);
+  } else {
+    tl.to(t.mute, { opacity: 0, scale: 0.4, duration: seconds, ease }, 0);
+  }
+  // The Z of a resting mascot are driven by their own loop, so they are only faded out when it wakes.
+  if (!pose.zzz) tl.to(t.zzz, { opacity: 0, duration: seconds, ease }, 0);
 
   // Turning away: rotate first, then close the eyes. Turning back: open them first, then rotate.
   const turnTo = (at: number, length: number) =>
@@ -175,11 +191,37 @@ export function playState(t: MascotTargets, state: MascotState, instant: boolean
         .to(t.body, { rotation: pose.bodyRotation, duration: 0.8, ease: STANDARD });
       break;
 
-    case "muted":
-      // Eyes shut, breathing slowly: resting, not gone.
+    case "muted": {
       tl.to(t.body, { scale: 1.015, duration: 3, ease: "sine.inOut", yoyo: true, repeat: -1 }, settle);
-      tl.to(t.shadow, { scaleX: 1.02, duration: 3, ease: "sine.inOut", yoyo: true, repeat: -1 }, settle);
+      // Every so often the icon gives a small shake, so the mute reads as alive, not stuck.
+      const shake = gsap.timeline({ repeat: -1, repeatDelay: 2.4 });
+      shake
+        .to(t.mute, { rotation: -9, duration: 0.12, ease: "sine.inOut" })
+        .to(t.mute, { rotation: 9, duration: 0.16, ease: "sine.inOut" })
+        .to(t.mute, { rotation: 0, duration: 0.14, ease: "sine.inOut" });
+      tl.add(shake, settle + 1);
       break;
+    }
+
+    case "resting": {
+      // Slow breathing and a faint sway, as if dozing.
+      tl.to(t.body, { scale: 1.03, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: -1 }, settle);
+      tl.to(t.body, { rotation: 2.5, duration: 4.4, ease: "sine.inOut", yoyo: true, repeat: -1 }, settle);
+      tl.to(t.shadow, { scaleX: 1.04, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: -1 }, settle);
+      // Each Z rises, grows and fades, a little after the one before it.
+      t.zzz.forEach((z, i) => {
+        const rise = gsap.timeline({ repeat: -1, repeatDelay: 0.5 });
+        rise
+          .fromTo(
+            z,
+            { opacity: 0, x: 0, y: 8, scale: 0.5, rotation: -12 },
+            { opacity: 0.9, x: 5, y: -3, scale: 1, rotation: 6, duration: 1.2, ease: "sine.out" },
+          )
+          .to(z, { opacity: 0, x: 12, y: -16, scale: 1.2, rotation: 16, duration: 1.2, ease: "sine.in" });
+        tl.add(rise, settle + i * 0.7);
+      });
+      break;
+    }
 
     case "success":
       tl.to(t.body, { scaleX: 1.04, scaleY: 0.94, duration: 0.1, ease: "power1.out" }, settle)

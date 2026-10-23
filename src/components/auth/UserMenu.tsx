@@ -20,8 +20,9 @@ function freeRepliesLabel(left: number) {
   return left === 1 ? "1 respuesta gratis" : `${left} respuestas gratis`;
 }
 
+// Both buttons rise and cast a shadow on hover (the shared `lift`), and show the hand cursor.
 const pill =
-  "inline-flex h-9 shrink-0 items-center rounded-full bg-text px-4 text-sm font-semibold text-surface hover:opacity-90 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
+  "lift lift-sm inline-flex h-9 shrink-0 cursor-pointer items-center rounded-full bg-text px-4 text-sm font-semibold text-surface focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
 
 interface UserMenuProps {
   nombre?: string | null;
@@ -50,7 +51,7 @@ export function UserMenu({ nombre, guestLeft, className }: UserMenuProps) {
       <div className="flex items-center gap-3 rounded-2xl bg-surface p-3 shadow-soft">
         <span
           aria-hidden
-          className="grid size-10 shrink-0 place-items-center rounded-full bg-pink-500 font-heading text-sm font-semibold text-white"
+          className="grid size-10 shrink-0 place-items-center rounded-full bg-text font-heading text-sm font-semibold text-surface"
         >
           {nombre ? initials(nombre) : <HugeiconsIcon icon={UserIcon} size={20} strokeWidth={2} />}
         </span>
@@ -70,9 +71,16 @@ export function UserMenu({ nombre, guestLeft, className }: UserMenuProps) {
             disabled={leaving}
             aria-label="Cerrar sesión"
             title="Cerrar sesión"
-            className="grid size-10 shrink-0 place-items-center rounded-full bg-text text-surface hover:opacity-90 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-60"
+            className="group lift lift-sm grid size-10 shrink-0 cursor-pointer place-items-center rounded-full bg-text text-surface focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <HugeiconsIcon icon={Logout01Icon} size={20} strokeWidth={2.25} aria-hidden />
+            {/* The door's arrow slips out a little on hover. */}
+            <HugeiconsIcon
+              icon={Logout01Icon}
+              size={20}
+              strokeWidth={2.25}
+              aria-hidden
+              className="transition-transform duration-[var(--duration-base)] ease-standard group-hover:translate-x-0.5"
+            />
           </button>
         ) : (
           <Link href="/login" className={pill}>

@@ -169,6 +169,64 @@ describe("runTriage", () => {
   });
 });
 
+describe("retrying a reply", () => {
+  const messages = [user("Me duele la rodilla")];
+
+  it("tells the model which answer the patient did not like and asks for a different one", async () => {
+    reply({ mensaje: "Cuéntame, ¿el dolor aparece al caminar?", listo: false });
+
+    await runTriage({ messages, avoid: "¿Desde cuándo te duele la rodilla?" });
+
+    const { system } = generateText.mock.calls[0][0];
+    expect(system).toContain("pidió otra respuesta");
+    expect(system).toContain("¿Desde cuándo te duele la rodilla?");
+    expect(system).toContain("de otra manera");
+    expect(system).toContain("no cambies el nivel de atención");
+  });
+
+  it("lets the model vary more on a retry than on a first answer", async () => {
+    reply({ mensaje: "a", listo: false });
+    reply({ mensaje: "b", listo: false });
+
+    await runTriage({ messages });
+    await runTriage({ messages, avoid: "respuesta anterior" });
+
+    expect(generateText.mock.calls[0][0].temperature).toBe(0.4);
+    expect(generateText.mock.calls[1][0].temperature).toBe(0.9);
+  });
+
+  it("adds nothing when there is no reply to avoid, or it is blank", async () => {
+    reply({ mensaje: "a", listo: false });
+    reply({ mensaje: "b", listo: false });
+
+    await runTriage({ messages });
+    await runTriage({ messages, avoid: "   " });
+
+    for (const call of generateText.mock.calls) {
+      expect(call[0].system).not.toContain("pidió otra respuesta");
+      expect(call[0].temperature).toBe(0.4);
+    }
+  });
+
+  it("keeps only the start of a very long reply, so the prompt stays small", async () => {
+    reply({ mensaje: "a", listo: false });
+
+    await runTriage({ messages, avoid: "x".repeat(5000) });
+
+    const { system } = generateText.mock.calls[0][0] as { system: string };
+    expect(system).toContain("x".repeat(800));
+    expect(system).not.toContain("x".repeat(801));
+  });
+
+  it("still sends the same patient message, so the question being answered does not change", async () => {
+    reply({ mensaje: "a", listo: false });
+
+    await runTriage({ messages, avoid: "respuesta anterior" });
+
+    expect(generateText.mock.calls[0][0].messages).toEqual([user("Me duele la rodilla")]);
+  });
+});
+
 describe("asModelTurn", () => {
   it("leaves patient messages alone", () => {
     expect(asModelTurn(user("Hola"))).toEqual(user("Hola"));

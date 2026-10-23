@@ -21,6 +21,13 @@ function useReducedMotion() {
 // Character colors are fixed on purpose: the sphere must read on light and dark surfaces.
 const EYE_COLOR = "#0d0d0d";
 
+/** Where each Z of a resting mascot starts, above and to the right of the sphere, and how big it is. */
+const ZZZ = [
+  { x: 92, y: 26, size: 0.85 },
+  { x: 101, y: 14, size: 1.1 },
+  { x: 110, y: 1, size: 1.4 },
+] as const;
+
 export function Mascot({ state, size = 120, className, label }: MascotProps) {
   const uid = useId().replace(/:/g, "");
   const reduced = useReducedMotion();
@@ -39,6 +46,8 @@ export function Mascot({ state, size = 120, className, label }: MascotProps) {
   const openRightRef = useRef<SVGGElement>(null);
   const shutLeftRef = useRef<SVGPathElement>(null);
   const shutRightRef = useRef<SVGPathElement>(null);
+  const muteRef = useRef<SVGGElement>(null);
+  const zzzRefs = useRef<(SVGGElement | null)[]>([]);
   // Lives across state changes, so a new state turns from wherever the last one left the sphere.
   const turnRef = useRef({ value: 0 });
 
@@ -97,8 +106,11 @@ export function Mascot({ state, size = 120, className, label }: MascotProps) {
     const orbits = [orbitLeftRef.current, orbitRightRef.current];
     const opens = [openLeftRef.current, openRightRef.current];
     const shut = [shutLeftRef.current, shutRightRef.current];
-    if (!body || !shadow || !lids || !look || !eyeLeft || !eyeRight || !gaze) return;
+    const mute = muteRef.current;
+    const zzz = zzzRefs.current.slice(0, ZZZ.length);
+    if (!body || !shadow || !lids || !look || !eyeLeft || !eyeRight || !gaze || !mute) return;
     if (orbits.some((el) => !el) || opens.some((el) => !el) || shut.some((el) => !el)) return;
+    if (zzz.length < ZZZ.length || zzz.some((el) => !el)) return;
 
     const targets: MascotTargets = {
       body,
@@ -110,6 +122,8 @@ export function Mascot({ state, size = 120, className, label }: MascotProps) {
       opens: opens as SVGGElement[],
       shut: shut as SVGPathElement[],
       turn: turnRef.current,
+      mute,
+      zzz: zzz as SVGGElement[],
     };
 
     if (!mountedRef.current) initOrigins(targets);
@@ -208,10 +222,10 @@ export function Mascot({ state, size = 120, className, label }: MascotProps) {
                     {/* Closed eye: a soft downward curve, level with the open eye's lower half. */}
                     <path
                       ref={shutLeftRef}
-                      d="M -6.5 2 Q 0 7 6.5 2"
+                      d="M -9.5 1 Q 0 10.5 9.5 1"
                       fill="none"
                       stroke={EYE_COLOR}
-                      strokeWidth="3.4"
+                      strokeWidth="4.2"
                       strokeLinecap="round"
                       opacity="0"
                     />
@@ -228,10 +242,10 @@ export function Mascot({ state, size = 120, className, label }: MascotProps) {
                     {/* Closed eye: a soft downward curve, level with the open eye's lower half. */}
                     <path
                       ref={shutRightRef}
-                      d="M -6.5 2 Q 0 7 6.5 2"
+                      d="M -9.5 1 Q 0 10.5 9.5 1"
                       fill="none"
                       stroke={EYE_COLOR}
-                      strokeWidth="3.4"
+                      strokeWidth="4.2"
                       strokeLinecap="round"
                       opacity="0"
                     />
@@ -241,7 +255,50 @@ export function Mascot({ state, size = 120, className, label }: MascotProps) {
             </g>
           </g>
         </g>
+
+        {/* Where the mouth would be: the mute icon, a solid speaker with a cross. */}
+        <g transform="translate(59.5 80)">
+          <g ref={muteRef} opacity="0">
+            {/* Speaker: a block and a cone, with rounded corners given by the stroke. */}
+            <path
+              d="M -8.4 -2.4 H -4.2 L 0 -6 V 6 L -4.2 2.4 H -8.4 Z"
+              fill={EYE_COLOR}
+              stroke={EYE_COLOR}
+              strokeWidth="1.6"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M 3.6 -3.4 L 8.6 3.4 M 8.6 -3.4 L 3.6 3.4"
+              fill="none"
+              stroke={EYE_COLOR}
+              strokeWidth="1.9"
+              strokeLinecap="round"
+            />
+          </g>
+        </g>
       </g>
+
+      {/* The Z of a resting mascot. They take the text color, so they read on light and dark surfaces. */}
+      {ZZZ.map((z, i) => (
+        <g key={i} transform={`translate(${z.x} ${z.y})`} style={{ color: "var(--text)" }}>
+          <g
+            ref={(el) => {
+              zzzRefs.current[i] = el;
+            }}
+            opacity="0"
+          >
+            <path
+              d="M -4 -4.5 H 4 L -4 4.5 H 4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              transform={`scale(${z.size})`}
+            />
+          </g>
+        </g>
+      ))}
     </svg>
   );
 }

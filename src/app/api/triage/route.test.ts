@@ -111,6 +111,40 @@ describe("POST /api/triage for signed-in users", () => {
   });
 });
 
+describe("POST /api/triage retries", () => {
+  function postWith(extra: Record<string, unknown>) {
+    return POST(
+      new Request("http://localhost/api/triage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [{ role: "user", content: "Me duele la rodilla" }], ...extra }),
+      }),
+    );
+  }
+
+  it("passes the reply to avoid on to the AI", async () => {
+    await postWith({ avoid: "Respuesta que no gustó" });
+
+    expect(runTriage).toHaveBeenCalledWith(expect.objectContaining({ avoid: "Respuesta que no gustó" }));
+  });
+
+  it("ignores an avoid that is not text", async () => {
+    for (const avoid of [42, { a: 1 }, ["x"], null]) {
+      runTriage.mockClear();
+      await postWith({ avoid });
+      expect(runTriage).toHaveBeenCalledWith(expect.objectContaining({ avoid: undefined }));
+    }
+  });
+
+  it("charges a retry like any other AI reply", async () => {
+    jar[GUEST_COOKIE] = encodeGuestCount(2);
+
+    const response = await postWith({ avoid: "Respuesta anterior" });
+
+    expect((await response.json()).guest).toEqual({ used: 3, limit: 5 });
+  });
+});
+
 describe("POST /api/triage validation", () => {
   it("asks for a message when there is none", async () => {
     expect((await post([])).status).toBe(400);

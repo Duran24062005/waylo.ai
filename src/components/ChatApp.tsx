@@ -12,6 +12,7 @@ import {
 } from "@/components/chat";
 import { LiveControls, LiveStage, MASCOT_STATE, useLiveVoice } from "@/components/live";
 import type { MascotState } from "@/components/mascot";
+import { SmoothScrollArea } from "@/components/SmoothScrollArea";
 import { duration, easing } from "@/design/motion";
 import {
   fallbackTitle,
@@ -186,7 +187,7 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
     }
   }
 
-  async function request(history: ChatMessage[]) {
+  async function request(history: ChatMessage[], avoid?: string) {
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
     setPending(true);
@@ -197,6 +198,8 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        // Only set when redoing a reply: it tells the AI which answer to say differently.
+        avoid,
         messages: history
           .filter((message) => message.id !== "welcome" && !errorIds.includes(message.id))
           // The model never sees the card, so it gets a note about the orientation it already gave.
@@ -283,7 +286,8 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
     setAlertIds((current) => current.filter((id) => id !== assistantId));
     setErrorIds((current) => current.filter((id) => id !== assistantId));
     setResult(null);
-    void request(history);
+    // The reply being redone goes along, so the AI answers the same question in a different way.
+    void request(history, messages[index].content);
   }
 
   /** Starts a new, empty conversation. The one that was open stays saved. */
@@ -350,7 +354,8 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
   const centered = !started || liveActive;
 
   // The alert state is not used here: it only sits next to the fixed red-flag text, in MessageList.
-  let mascotState: MascotState = "idle";
+  // With nothing going on and no one writing, Waylo rests. Clicking the input wakes it ("listening").
+  let mascotState: MascotState = "resting";
   if (pending) mascotState = "thinking";
   else if (failed) mascotState = "error";
   else if (speaking) mascotState = "speaking";
@@ -389,19 +394,20 @@ export function ChatApp({ nombre, userId, guest }: ChatAppProps) {
                 <LiveStage phase={live.phase} levelRef={live.levelRef} notice={failed ? FAILURE_TEXT : live.notice} />
               </div>
             ) : started ? (
-              <div data-lenis-prevent className="flex-1 overflow-y-auto">
-                <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 sm:px-8">
-                  <MessageList
-                    key={activeId}
-                    messages={messages.filter((message) => message.id !== "welcome")}
-                    pending={pending}
-                    alertMessageIds={alertIds}
-                    errorMessageIds={errorIds}
-                    onRetry={retry}
-                    onRegenerate={regenerate}
-                  />
-                </div>
-              </div>
+              <SmoothScrollArea
+                className="flex-1 overflow-y-auto"
+                contentClassName="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 sm:px-8"
+              >
+                <MessageList
+                  key={activeId}
+                  messages={messages.filter((message) => message.id !== "welcome")}
+                  pending={pending}
+                  alertMessageIds={alertIds}
+                  errorMessageIds={errorIds}
+                  onRetry={retry}
+                  onRegenerate={regenerate}
+                />
+              </SmoothScrollArea>
             ) : (
               <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-end px-4 pb-6 sm:px-8">
                 <EmptyState nombre={nombre} />
