@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Logout01Icon, UserIcon } from "@hugeicons/core-free-icons";
-import { cn } from "@/lib/utils";
 
 function initials(nombre: string) {
   return nombre
@@ -16,10 +15,23 @@ function initials(nombre: string) {
     .join("");
 }
 
-const linkStyles =
-  "inline-flex min-h-11 items-center gap-2 self-start rounded-lg px-2 text-sm font-medium text-text-muted hover:text-text focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-60";
+function freeRepliesLabel(left: number) {
+  if (left <= 0) return "Sin respuestas gratis";
+  return left === 1 ? "1 respuesta gratis" : `${left} respuestas gratis`;
+}
 
-export function UserMenu({ nombre, className }: { nombre?: string | null; className?: string }) {
+const pill =
+  "inline-flex h-9 shrink-0 items-center rounded-full bg-text px-4 text-sm font-semibold text-surface hover:opacity-90 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
+
+interface UserMenuProps {
+  nombre?: string | null;
+  /** Free replies a visitor has left. Not used for signed-in users. */
+  guestLeft?: number;
+  className?: string;
+}
+
+/** The profile card: one frame, with sign-out inside it for signed-in users. */
+export function UserMenu({ nombre, guestLeft, className }: UserMenuProps) {
   const router = useRouter();
   const [leaving, setLeaving] = useState(false);
 
@@ -34,7 +46,7 @@ export function UserMenu({ nombre, className }: { nombre?: string | null; classN
   }
 
   return (
-    <div className={cn("flex flex-col gap-1", className)}>
+    <div className={className}>
       <div className="flex items-center gap-3 rounded-2xl bg-surface p-3 shadow-soft">
         <span
           aria-hidden
@@ -46,35 +58,28 @@ export function UserMenu({ nombre, className }: { nombre?: string | null; classN
           <p className="truncate font-heading text-base font-semibold text-text">
             {nombre ? nombre.split(" ")[0] : "Invitado"}
           </p>
-          <p className="text-sm text-text-muted">Gratis</p>
+          {/* Not truncated: the free-replies count is the one thing a visitor must be able to read. */}
+          <p className="text-sm leading-snug text-text-muted">
+            {nombre || guestLeft === undefined ? "Gratis" : freeRepliesLabel(guestLeft)}
+          </p>
         </div>
         {nombre ? (
           <button
             type="button"
-            className="inline-flex h-9 shrink-0 items-center rounded-full bg-text px-4 text-sm font-semibold text-surface hover:opacity-90 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            onClick={logout}
+            disabled={leaving}
+            aria-label="Cerrar sesión"
+            title="Cerrar sesión"
+            className="grid size-10 shrink-0 place-items-center rounded-full bg-text text-surface hover:opacity-90 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Mejorar
+            <HugeiconsIcon icon={Logout01Icon} size={20} strokeWidth={2.25} aria-hidden />
           </button>
         ) : (
-          <Link
-            href="/login"
-            className="inline-flex h-9 shrink-0 items-center rounded-full bg-text px-4 text-sm font-semibold text-surface hover:opacity-90 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-          >
+          <Link href="/login" className={pill}>
             Entrar
           </Link>
         )}
       </div>
-
-      {nombre ? (
-        <button type="button" onClick={logout} disabled={leaving} className={linkStyles}>
-          <HugeiconsIcon icon={Logout01Icon} size={18} strokeWidth={2} aria-hidden />
-          Cerrar sesión
-        </button>
-      ) : (
-        <Link href="/registro" className={linkStyles}>
-          Crear cuenta
-        </Link>
-      )}
     </div>
   );
 }

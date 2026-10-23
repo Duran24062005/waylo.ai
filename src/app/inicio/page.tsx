@@ -9,7 +9,6 @@ import { SocialDock } from "@/components/home/SocialDock";
 import { ThemeToggle } from "@/components/theme";
 import { buttonPrimary } from "@/components/ui/buttons";
 import { socialLinks } from "@/data/social-links";
-import { getSession } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -19,9 +18,9 @@ export const metadata: Metadata = {
 // One column for the whole page: logo, title, text and sections share the same left edge.
 const column = "mx-auto w-full max-w-7xl px-4 sm:px-8";
 
-export default async function InicioPage() {
-  const session = await getSession();
-  const chatHref = session ? "/chat" : "/login";
+export default function InicioPage() {
+  // The chat is open to everyone: visitors without an account get a few free replies there.
+  const chatHref = "/chat";
 
   return (
     <div className="bg-surface text-text">

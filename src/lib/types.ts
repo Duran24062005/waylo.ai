@@ -33,8 +33,29 @@ export interface OrientationCard {
   aviso: string;
 }
 
+/** How many free AI replies a visitor without an account has used. */
+export interface GuestUsage {
+  used: number;
+  limit: number;
+}
+
 export interface TriageResponse {
   kind: "red_flag" | "question" | "orientation";
   message: string;
   card?: OrientationCard;
+  /** Only present for visitors without an account. */
+  guest?: GuestUsage;
+}
+
+/** A saved chat, kept in the browser. */
+export interface Conversation {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  /** Pinned conversations are listed first. Pinning changes the order only, not how long they are kept. */
+  pinned?: boolean;
+  messages: ChatMessage[];
+  alertIds: string[];
+  errorIds: string[];
 }
