@@ -17,6 +17,8 @@ import { LiveControls, LiveStage, MASCOT_STATE, useLiveVoice } from "@/component
 import type { MascotState } from "@/components/mascot";
 import { ScrollEdge } from "@/components/chat/ScrollEdge";
 import { useRemaining } from "@/components/chat/useRemaining";
+import type { SectionId } from "@/components/settings/sections";
+import { SettingsProvider } from "@/components/settings/SettingsProvider";
 import { SmoothScrollArea } from "@/components/SmoothScrollArea";
 import { duration, easing } from "@/design/motion";
 import {
@@ -66,6 +68,8 @@ function getStorage(): Storage | null {
 }
 
 interface ChatAppProps {
+  /** Opens the settings window when the page arrives, on this section (a link such as /chat?settings=usage). */
+  initialSettings?: SectionId;
   nombre?: string | null;
   /** Keeps the saved conversations of each account apart. */
   userId?: string | null;
@@ -75,7 +79,7 @@ interface ChatAppProps {
   usage?: AccountUsage;
 }
 
-export function ChatApp({ nombre, userId, guest, usage: initialUsage }: ChatAppProps) {
+function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppProps) {
   const { t } = useI18n();
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
   const [draft, setDraft] = useState("");
@@ -537,5 +541,13 @@ export function ChatApp({ nombre, userId, guest, usage: initialUsage }: ChatAppP
         </div>
       </div>
     </MotionConfig>
+  );
+}
+
+export function ChatApp({ initialSettings, ...props }: ChatAppProps) {
+  return (
+    <SettingsProvider initialSection={initialSettings}>
+      <ChatAppInner {...props} />
+    </SettingsProvider>
   );
 }

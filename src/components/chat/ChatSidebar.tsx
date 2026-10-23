@@ -7,7 +7,6 @@ import { Mascot, type MascotState } from "@/components/mascot";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { SmoothScrollArea } from "@/components/SmoothScrollArea";
 import { ThemeToggle } from "@/components/theme";
-import { SettingsLink } from "./SettingsLink";
 import { useT } from "@/i18n/I18nProvider";
 import { buttonSoft } from "@/components/ui/buttons";
 import { cn } from "@/lib/utils";
@@ -58,10 +57,7 @@ export function ChatSidebar({
         >
           Waylo
         </Link>
-        <div className="flex items-center gap-2">
-          <SettingsLink />
-          <ThemeToggle />
-        </div>
+        <ThemeToggle />
       </div>
 
       <div className="flex flex-col items-center gap-5 text-center">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { ChatApp } from "@/components/ChatApp";
+import { isSection } from "@/components/settings/sections";
 import { getMessages } from "@/i18n/server";
 import { GUEST_COOKIE, guestUsage, readGuest } from "@/lib/guest";
 import { displayName } from "@/lib/profile";
@@ -13,7 +14,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.meta.titles.chat };
 }
 
-export default async function ChatPage() {
+export default async function ChatPage({ searchParams }: { searchParams: Promise<{ settings?: string }> }) {
+  const { settings } = await searchParams;
   const session = await getSession();
 
   // Anyone can open the chat. Visitors without an account get a few free replies, counted in a signed cookie.
@@ -36,6 +38,7 @@ export default async function ChatPage() {
 
   return (
     <ChatApp
+      initialSettings={isSection(settings) ? settings : undefined}
       nombre={session ? displayName(session) : undefined}
       userId={session?.id}
       guest={guest}

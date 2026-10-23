@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, type FormEvent } from "react";
+import { useSettings } from "./SettingsProvider";
 import { LockPasswordIcon, Mail01Icon } from "@hugeicons/core-free-icons";
 import { FieldError } from "@/components/auth/FieldError";
 import { TextField } from "@/components/auth/TextField";
@@ -201,6 +202,27 @@ function Sessions({ initial }: { initial: SessionInfo[] }) {
   );
 }
 
+function SignOut() {
+  const { t } = useI18n();
+  const { close } = useSettings();
+  const [busy, setBusy] = useState(false);
+
+  async function signOut() {
+    setBusy(true);
+    await fetch("/api/logout", { method: "POST" }).catch(() => undefined);
+    // Closing the window refreshes the page, which now shows a visitor.
+    close();
+  }
+
+  return (
+    <SettingsCard title={t.profile.signOut}>
+      <button type="button" onClick={() => void signOut()} disabled={busy} className={cn(buttonSoft, "min-h-11 w-fit px-5 text-sm")}>
+        {t.profile.signOut}
+      </button>
+    </SettingsCard>
+  );
+}
+
 interface AccountPanelProps {
   profile: Profile | null;
   sessions: SessionInfo[];
@@ -339,6 +361,7 @@ export function AccountPanel({ profile: initial, sessions }: AccountPanelProps) 
       </SettingsCard>
 
       <Sessions initial={sessions} />
+      <SignOut />
     </>
   );
 }

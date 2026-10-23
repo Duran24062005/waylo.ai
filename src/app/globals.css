@@ -449,6 +449,10 @@ body {
   animation: popover-in var(--duration-base) var(--ease-standard);
 }
 
+.popover-motion[data-side="top"][data-state="open"] {
+  animation-name: popover-in-up;
+}
+
 .popover-motion[data-state="closed"] {
   animation: popover-out var(--duration-fast) var(--ease-standard);
 }
@@ -457,6 +461,13 @@ body {
   from {
     opacity: 0;
     transform: translateY(-6px) scale(0.97);
+  }
+}
+
+@keyframes popover-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
   }
 }
 

@@ -151,6 +151,7 @@ export const es = {
     comeBackIn: (wait: string) => `Vuelven en ${wait}`,
     signIn: "Entrar",
     signOut: "Cerrar sesión",
+    menu: { profile: "Perfil", usage: "Uso", settings: "Configuración", signIn: "Iniciar sesión", open: "Abrir el menú de tu cuenta" },
   },
 
   limits: {
@@ -269,7 +270,12 @@ export const es = {
   settings: {
     title: "Configuración",
     backToChat: "Volver al chat",
-    nav: { general: "General", appearance: "Apariencia", account: "Cuenta", live: "Waylo Live", usage: "Uso" },
+    nav: { general: "General", appearance: "Apariencia", account: "Perfil", live: "Waylo Live", usage: "Uso" },
+    close: "Cerrar",
+    loading: "Cargando…",
+    loadFailed: "No pudimos cargar tu configuración. Intenta de nuevo.",
+    retry: "Reintentar",
+    groups: { preferences: "Preferencias", account: "Cuenta" },
     saved: "Guardado",
     saving: "Guardando…",
     saveFailed: "No pudimos guardar. Intenta de nuevo.",
@@ -287,7 +293,7 @@ export const es = {
       system: "Sistema",
     },
     account: {
-      title: "Cuenta",
+      title: "Perfil",
       signedOutTitle: "Inicia sesión para ver tu cuenta",
       signedOutText: "Con una cuenta guardas tus datos, usas Waylo sin el límite de invitado y ves tus sesiones y tu uso.",
       signIn: "Iniciar sesión o registrarme",

@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "motion/react";
+import { useSettings } from "@/components/settings/SettingsProvider";
 import { buttonSoft } from "@/components/ui/buttons";
 import { duration, easing } from "@/design/motion";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -21,6 +21,7 @@ interface UsageLimitNoticeProps {
 /** Shown when a signed-in account used its daily or monthly replies and tries to write. */
 export function UsageLimitNotice({ scope, resetAt, waitMs }: UsageLimitNoticeProps) {
   const { t, locale } = useI18n();
+  const settings = useSettings();
   const day = scope === "day";
   // A month's wait is told as a date; a day's, as the time that is left.
   const date = new Intl.DateTimeFormat(FORMAT_LOCALE[locale], { day: "numeric", month: "long" }).format(resetAt);
@@ -43,9 +44,9 @@ export function UsageLimitNotice({ scope, resetAt, waitMs }: UsageLimitNoticePro
             : t.limits.monthText(date)}
         </p>
       </div>
-      <Link href="/configuracion?s=usage" className={cn(buttonSoft, "min-h-11 shrink-0 px-5 text-base")}>
+      <button type="button" onClick={() => settings.open("usage")} className={cn(buttonSoft, "min-h-11 shrink-0 cursor-pointer px-5 text-base")}>
         {t.limits.seeUsage}
-      </Link>
+      </button>
     </motion.div>
   );
 }

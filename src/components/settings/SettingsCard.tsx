@@ -32,12 +32,12 @@ interface SettingsCardProps {
   children: React.ReactNode;
 }
 
-/** One section of the settings: a title, and its settings in a raised panel. */
+/** One section of the settings: a title and its settings. Sections that follow one another are told apart by a faint line. */
 export function SettingsCard({ title, status, children }: SettingsCardProps) {
   return (
-    <section aria-label={title} className="flex flex-col gap-6 rounded-2xl bg-surface-raised p-5 shadow-soft sm:p-8">
+    <section aria-label={title} className="flex flex-col gap-6 not-first:border-t not-first:border-text/10 not-first:pt-8">
       <div className="flex items-center justify-between gap-4">
-        <h2 className="font-heading text-xl font-semibold text-text">{title}</h2>
+        <h2 className="font-heading text-lg font-semibold text-text">{title}</h2>
         {status ? <SaveIndicator status={status} /> : null}
       </div>
       {children}

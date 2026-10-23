@@ -148,6 +148,7 @@ export const en: Messages = {
     comeBackIn: (wait) => `Back in ${wait}`,
     signIn: "Sign in",
     signOut: "Sign out",
+    menu: { profile: "Profile", usage: "Usage", settings: "Settings", signIn: "Sign in", open: "Open your account menu" },
   },
 
   limits: {
@@ -263,7 +264,12 @@ export const en: Messages = {
   settings: {
     title: "Settings",
     backToChat: "Back to chat",
-    nav: { general: "General", appearance: "Appearance", account: "Account", live: "Waylo Live", usage: "Usage" },
+    nav: { general: "General", appearance: "Appearance", account: "Profile", live: "Waylo Live", usage: "Usage" },
+    close: "Close",
+    loading: "Loading…",
+    loadFailed: "We could not load your settings. Please try again.",
+    retry: "Try again",
+    groups: { preferences: "Preferences", account: "Account" },
     saved: "Saved",
     saving: "Saving…",
     saveFailed: "We could not save. Please try again.",
@@ -281,7 +287,7 @@ export const en: Messages = {
       system: "System",
     },
     account: {
-      title: "Account",
+      title: "Profile",
       signedOutTitle: "Sign in to see your account",
       signedOutText: "With an account you keep your details, use Waylo without the guest limit, and see your sessions and usage.",
       signIn: "Sign in or sign up",
