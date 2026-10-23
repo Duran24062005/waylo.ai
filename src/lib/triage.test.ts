@@ -112,6 +112,17 @@ describe("runTriage", () => {
     await expect(runTriage({ messages: [user("Hola")] })).rejects.toBeInstanceOf(TriageUnavailableError);
   });
 
+  it("tells the model its name is Waylo", async () => {
+    reply({ mensaje: "Soy Waylo. ¿Qué sientes?", listo: false });
+
+    await runTriage({ messages: [user("¿Cómo te llamas?")] });
+
+    const { system } = generateText.mock.calls[0][0] as { system: string };
+    expect(system).toContain("Eres Waylo");
+    expect(system).toContain("Te llamas Waylo");
+    expect(system).not.toContain("Navegador del Sistema de Salud");
+  });
+
   it("tells the model about an earlier alarm when the patient keeps writing", async () => {
     reply({ mensaje: "Estoy contigo. Acude ya a Urgencias.", listo: true, nivel: "urgencias" });
 

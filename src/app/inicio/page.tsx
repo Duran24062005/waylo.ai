@@ -4,18 +4,15 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowRight02Icon } from "@hugeicons/core-free-icons";
 import { Hero } from "@/components/home/Hero";
 import { HeroDecor } from "@/components/home/HeroDecor";
-import { Levels } from "@/components/home/Levels";
-import { SocialDock } from "@/components/home/SocialDock";
 import { ThemeToggle } from "@/components/theme";
 import { buttonPrimary } from "@/components/ui/buttons";
-import { socialLinks } from "@/data/social-links";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Inicio",
 };
 
-// One column for the whole page: logo, title, text and sections share the same left edge.
+// One column for the whole page: logo, title and text share the same left edge.
 const column = "mx-auto w-full max-w-7xl px-4 sm:px-8";
 
 export default function InicioPage() {
@@ -50,20 +47,6 @@ export default function InicioPage() {
           <Hero chatHref={chatHref} />
         </main>
       </section>
-
-      <div className={cn(column, "pb-4 pt-8 lg:pt-16")}>
-        <Levels />
-      </div>
-
-      {socialLinks.length > 0 ? (
-        <footer className={cn(column, "flex justify-center pb-10 pt-12")}>
-          <SocialDock />
-        </footer>
-      ) : (
-        <footer className={cn(column, "pb-10 pt-12 text-center text-caption text-text-muted")}>
-          Waylo orienta. No diagnostica ni receta.
-        </footer>
-      )}
     </div>
   );
 }

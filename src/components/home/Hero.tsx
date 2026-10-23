@@ -39,16 +39,16 @@ export function Hero({ chatHref }: { chatHref: string }) {
             Medicina General.
           </motion.p>
 
-          <motion.ul variants={part} className="flex flex-wrap gap-2.5 pt-1">
+          {/* Pills with a round icon, like the buttons and the mascot's cards: roomy, and each one reads at a glance. */}
+          <motion.ul variants={part} className="flex flex-wrap gap-2.5 pt-3">
             {FEATURES.map((feature) => (
-              <li
-                key={feature.title}
-                className="lift lift-sm flex items-center gap-2.5 rounded-xl bg-surface-raised/80 py-2 pl-2.5 pr-3.5 shadow-soft"
-              >
-                <HugeiconsIcon icon={feature.icon} size={17} strokeWidth={2} aria-hidden className="shrink-0 text-text" />
-                <span className="flex flex-col leading-tight">
-                  <span className="font-heading text-[0.8125rem] font-semibold text-text">{feature.title}</span>
-                  <span className="text-[0.6875rem] text-text-muted">{feature.text}</span>
+              <li key={feature.title} className="flex items-center gap-2.5 rounded-full bg-surface-raised py-1.5 pl-1.5 pr-4 shadow-soft">
+                <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-text text-surface">
+                  <HugeiconsIcon icon={feature.icon} size={18} strokeWidth={2.25} />
+                </span>
+                <span className="flex flex-col gap-0.5 leading-none">
+                  <span className="font-heading text-sm font-semibold text-text">{feature.title}</span>
+                  <span className="text-[0.78rem] text-text-muted">{feature.text}</span>
                 </span>
               </li>
             ))}
