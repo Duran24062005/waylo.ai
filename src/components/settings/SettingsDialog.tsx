@@ -20,6 +20,7 @@ import type { Voice } from "@/lib/preferences";
 import type { Profile } from "@/lib/profile";
 import type { SessionInfo } from "@/lib/profile-db";
 import type { EpsState } from "@/lib/eps";
+import type { IpsLinkState } from "@/lib/ips";
 import type { AccountUsage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { AccountPanel } from "./AccountPanel";
@@ -49,6 +50,7 @@ interface SettingsData {
   sessions: SessionInfo[];
   usage: AccountUsage | null;
   eps: EpsState | null;
+  ips: IpsLinkState;
 }
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -267,7 +269,7 @@ export function SettingsDialog({ section, onSection, onClose }: SettingsDialogPr
                   <AccountPanel profile={data.profile} />
                 </div>
                 <div role="tabpanel" id="settings-panel-eps" aria-labelledby="settings-tab-eps" hidden={section !== "eps"} className="flex flex-col gap-8">
-                  <EpsPanel eps={data.eps} />
+                  <EpsPanel eps={data.eps} ips={data.ips} />
                 </div>
                 <div role="tabpanel" id="settings-panel-security" aria-labelledby="settings-tab-security" hidden={section !== "security"} className="flex flex-col gap-8">
                   <SecurityPanel profile={data.profile} sessions={data.sessions} />

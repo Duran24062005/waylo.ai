@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getLocale } from "@/i18n/server";
 import { getEpsState } from "@/lib/eps-db";
+import { getIpsLink } from "@/lib/ips-backend";
 import { readPreferences } from "@/lib/preferences";
 import { getProfile, listSessions } from "@/lib/profile-db";
 import { getSession } from "@/lib/session";
@@ -15,18 +16,19 @@ export async function GET() {
   const headers = { "Cache-Control": "no-store" };
 
   if (!session) {
-    return NextResponse.json({ signedIn: false, ...common, profile: null, sessions: [], usage: null, eps: null }, { headers });
+    return NextResponse.json({ signedIn: false, ...common, profile: null, sessions: [], usage: null, eps: null, ips: { status: "none", ips: null, linked_at: null, status_changed_at: null } }, { headers });
   }
 
   try {
-    const [profile, sessions, row, eps] = await Promise.all([
+    const [profile, sessions, row, eps, ips] = await Promise.all([
       getProfile(session.id),
       listSessions(session.id, session.sid),
       readUsage(session.id),
       getEpsState(session.id, Date.now()),
+      getIpsLink(session.id).catch(() => ({ status: "unavailable" as const, ips: null, linked_at: null, status_changed_at: null })),
     ]);
     return NextResponse.json(
-      { signedIn: true, ...common, profile, sessions, usage: usageStatus(row, Date.now()), eps },
+      { signedIn: true, ...common, profile, sessions, usage: usageStatus(row, Date.now()), eps, ips },
       { headers },
     );
   } catch {

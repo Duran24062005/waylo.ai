@@ -6,7 +6,8 @@ import { TextField } from "@/components/auth/TextField";
 import { buttonSoft } from "@/components/ui/buttons";
 import { EPS_IDS, EPS_NAMES, type EpsId } from "@/data/eps";
 import { useI18n } from "@/i18n/I18nProvider";
-import { CEDULA_PATTERN, CODE_LENGTH, type EpsPatch, type EpsState } from "@/lib/eps";
+import { CEDULA_PATTERN, CODE_LENGTH, CODE_PATTERN, type EpsPatch, type EpsState } from "@/lib/eps";
+import type { IpsLinkState } from "@/lib/ips";
 import { cn } from "@/lib/utils";
 import { formatWait } from "@/lib/wait";
 import { Combobox } from "./Combobox";
@@ -19,7 +20,7 @@ const NONE = "none";
 const CEDULA_MAX = 12;
 
 /** The EPS of the person: which one, their ID number, the temporary code it sent, and the authorization for the bot. */
-export function EpsPanel({ eps: initial }: { eps: EpsState | null }) {
+export function EpsPanel({ eps: initial, ips: initialIps }: { eps: EpsState | null; ips: IpsLinkState }) {
   const { t } = useI18n();
   const copy = t.settings.eps;
   const { status, track } = useSaveStatus();
@@ -28,6 +29,9 @@ export function EpsPanel({ eps: initial }: { eps: EpsState | null }) {
   const [cedulaInvalid, setCedulaInvalid] = useState(false);
   const [code, setCode] = useState("");
   const [codeError, setCodeError] = useState<string | null>(null);
+  const [ips, setIps] = useState(initialIps);
+  const [ipsError, setIpsError] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState(false);
   // Counts down on screen. When it reaches zero the code is as good as gone, with no reload.
   const left = useRemaining(eps?.codigoVenceEn ?? undefined);
 
@@ -35,6 +39,7 @@ export function EpsPanel({ eps: initial }: { eps: EpsState | null }) {
 
   const codeActive = eps.codigoVenceEn !== null && left !== 0;
   const access = eps.acceso && left !== 0;
+  const ipsAccess = ips.status === "active";
 
   /** Saves a change. The server answers with the new state, which replaces what is on screen. */
   async function save(patch: EpsPatch): Promise<{ ok: boolean; error?: string }> {
@@ -67,11 +72,47 @@ export function EpsPanel({ eps: initial }: { eps: EpsState | null }) {
   async function changeCode(next: string) {
     setCode(next);
     setCodeError(null);
-    if (next.length < CODE_LENGTH) return;
-    const result = await save({ codigo: next });
-    // Whatever the answer, the digits do not stay on screen.
-    setCode("");
-    if (!result.ok) setCodeError(result.error === "not_authorized" ? copy.codeNeedsAuth : copy.codeError);
+  }
+
+  async function disconnect() {
+    try {
+      const response = await fetch("/api/ips/link", { method: "DELETE" });
+      const body = (await response.json().catch(() => null)) as IpsLinkState | { error?: string } | null;
+      if (!response.ok || !body || !("status" in body)) throw new Error("disconnect failed");
+      setIps(body);
+      setIpsError(null);
+    } catch {
+      setIpsError(copy.connectionError);
+    }
+  }
+
+  async function connect() {
+    const documentNumber = cedula.trim();
+    if (!eps || eps.eps !== "confianza" || !eps.autorizado || !CEDULA_PATTERN.test(documentNumber) || !CODE_PATTERN.test(code)) {
+      setIpsError(copy.connectionRequirements);
+      return;
+    }
+    setConnecting(true);
+    setIpsError(null);
+    try {
+      const response = await fetch("/api/ips/link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ document_type: "CC", document_number: documentNumber, eps: "confianza", activation_code: code }),
+      });
+      const body = (await response.json().catch(() => null)) as IpsLinkState | { error?: string } | null;
+      if (!response.ok || !body || !("status" in body)) {
+        setIpsError(body && "error" in body && body.error === "LINK_INVALID" ? copy.connectionInvalid : copy.connectionError);
+        return;
+      }
+      setIps(body);
+      setCode("");
+      setIpsError(null);
+    } catch {
+      setIpsError(copy.connectionError);
+    } finally {
+      setConnecting(false);
+    }
   }
 
   async function authorize(next: boolean) {
@@ -107,7 +148,11 @@ export function EpsPanel({ eps: initial }: { eps: EpsState | null }) {
         clearable={false}
         options={options}
         value={eps.eps ?? NONE}
-        onChange={(value) => void save({ eps: value === NONE || value === null ? null : (value as EpsId) })}
+        onChange={(value) => {
+          const next = value === NONE || value === null ? null : (value as EpsId);
+          if (ips.status === "active" && next !== "confianza") void disconnect();
+          void save({ eps: next });
+        }}
       />
 
       <div className="flex flex-col gap-1.5">
@@ -168,6 +213,37 @@ export function EpsPanel({ eps: initial }: { eps: EpsState | null }) {
           </div>
         ) : null}
       </Setting>
+
+      <div className="flex flex-col gap-3 rounded-xl bg-surface px-4 py-4 shadow-inset">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm font-semibold text-text">{copy.connectionLabel}</span>
+          <span className={cn("size-2.5 rounded-full", ipsAccess ? "bg-success" : "bg-text-muted")} aria-hidden />
+        </div>
+        <p className="text-sm text-text-muted">
+          {ips.status === "active"
+            ? copy.connectionActive
+            : ips.status === "expired"
+              ? copy.connectionExpired
+              : ips.status === "unavailable"
+                ? copy.connectionUnavailable
+                : copy.connectionInactive}
+        </p>
+        {ips.status === "active" ? (
+          <button type="button" onClick={() => void disconnect()} className={cn(buttonSoft, "min-h-10 px-4 text-sm")}>
+            {copy.disconnect}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void connect()}
+            disabled={connecting || !eps.autorizado || eps.eps !== "confianza" || !CEDULA_PATTERN.test(cedula.trim()) || !CODE_PATTERN.test(code)}
+            className={cn(buttonSoft, "min-h-10 px-4 text-sm")}
+          >
+            {connecting ? copy.connecting : copy.connect}
+          </button>
+        )}
+        {ipsError ? <p role="alert" className="text-sm font-semibold text-danger">{ipsError}</p> : null}
+      </div>
 
       <Setting label={copy.authLabel}>
         <label className={cn(buttonSoft, "min-h-0 cursor-pointer items-start justify-start gap-3 rounded-xl px-4 py-3.5 text-left font-normal shadow-soft")}>

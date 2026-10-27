@@ -39,6 +39,8 @@ export interface TriageInput {
   /** What the patient likes to be called, when they have said so in their settings. */
   name?: string;
   eps?: string;
+  /** Contexto server-side de la IPS, solo cuando la consulta del paciente pide citas. */
+  ipsContext?: string;
   /** Set when the patient pressed "Reintentar": the reply they were not happy with, so the new one is different. */
   avoid?: string;
 }
@@ -188,6 +190,11 @@ function buildSystem(input: TriageInput, priorAlarm: boolean, locale: Locale): s
   ];
   const name = safeName(input.name);
   if (name) notes.push(`El paciente prefiere que lo llames «${name}». Úsalo con naturalidad, sin repetirlo en cada mensaje.`);
+  if (input.ipsContext) {
+    notes.push(
+      `Datos actuales de Confianza consultados por el servidor. Úsalos solo para responder sobre citas; no inventes ni modifiques datos:\n${input.ipsContext}`,
+    );
+  }
 
   if (priorAlarm && !oriented) {
     notes.push(

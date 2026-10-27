@@ -9,16 +9,37 @@ import {
   readGuest,
 } from "@/lib/guest";
 import { getMessages } from "@/i18n/server";
+import { messages } from "@/i18n/messages";
 import { isLocale } from "@/i18n/locales";
 import { sanitizeAttachments } from "@/lib/attachments";
 import { displayName } from "@/lib/profile";
 import { getSession } from "@/lib/session";
+import { getIpsAppointments, IpsBackendError } from "@/lib/ips-backend";
 import { runTriage, TriageUnavailableError, type TriageMessage } from "@/lib/triage";
+import type { IpsAppointment } from "@/lib/ips";
 import type { ChatMessage } from "@/lib/types";
 import { readUsage, saveUsage, usageStatus, withReply, type UsageRow } from "@/lib/usage";
 
 // grok-4.6 reasons before answering and can take more than the 10 s default on Vercel.
 export const maxDuration = 60;
+
+function asksForAppointments(messages: TriageMessage[]): boolean {
+  const latest = [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
+  return /\b(cita|citas|turno|turnos|agenda|agendar|appointment|appointments|booking|schedule|consulta|consultas|agendamento|agendar)\b/i.test(latest);
+}
+
+function appointmentsContext(appointments: IpsAppointment[], emptyText: string): string {
+  if (appointments.length === 0) return emptyText;
+  return appointments
+    .slice(0, 20)
+    .map((appointment) => {
+      const when = appointment.endsAt ? `${appointment.startsAt} - ${appointment.endsAt}` : appointment.startsAt;
+      const reason = appointment.reason ? `; motivo: ${appointment.reason}` : "";
+      const site = appointment.site ? `; sede: ${appointment.site.name}, ${appointment.site.city}` : "";
+      return `- ${when}; estado: ${appointment.status}${reason}${site}`;
+    })
+    .join("\n");
+}
 
 export async function POST(request: Request) {
   const { locale: appLocale, t } = await getMessages();
@@ -65,9 +86,24 @@ export async function POST(request: Request) {
   }
 
   try {
+    let ipsContext: string | undefined;
+    if (session && asksForAppointments(turns)) {
+      try {
+        const appointments = await getIpsAppointments(session.id);
+        const ipsCopy = messages[locale].server.errors;
+        ipsContext = appointmentsContext(appointments, ipsCopy.ipsNoAppointments);
+      } catch (error) {
+        const ipsCopy = messages[locale].server.errors;
+        ipsContext =
+          error instanceof IpsBackendError && error.code === "NO_ACTIVE_LINK"
+            ? ipsCopy.ipsNotLinked
+            : ipsCopy.ipsUnavailable;
+      }
+    }
     const result = await runTriage({
       messages: turns,
       eps: body.eps,
+      ipsContext,
       avoid: typeof body.avoid === "string" ? body.avoid : undefined,
       locale,
       name: session ? displayName(session) : undefined,
