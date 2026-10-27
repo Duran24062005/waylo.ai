@@ -138,7 +138,7 @@ export const en: Messages = {
     retry: "Try again",
     tryAgain: "Try again",
     conversationRegion: "Conversation",
-    thinking: "Thinking",
+    thinking: "Thinking...",
     jumpToLatest: "Go to the latest message",
     failure: "I could not complete the guidance. If you feel unwell, seek medical care.",
     disclaimer: "Waylo guides; it does not diagnose or prescribe. If you feel very unwell, go to Emergency Care.",

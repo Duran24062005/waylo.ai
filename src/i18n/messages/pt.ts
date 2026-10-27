@@ -138,7 +138,7 @@ export const pt: Messages = {
     retry: "Tentar de novo",
     tryAgain: "Tentar de novo",
     conversationRegion: "Conversa",
-    thinking: "Pensando",
+    thinking: "Pensando...",
     jumpToLatest: "Ir para a última mensagem",
     failure: "Não consegui concluir a orientação. Se você se sente mal, procure atendimento médico.",
     disclaimer: "A Waylo orienta, não diagnostica nem receita. Se você se sente muito mal, vá a uma Urgência.",

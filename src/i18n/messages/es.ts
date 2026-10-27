@@ -140,7 +140,7 @@ export const es = {
     retry: "Reintentar",
     tryAgain: "Intentar de nuevo",
     conversationRegion: "Conversación",
-    thinking: "Pensando",
+    thinking: "Pensando...",
     jumpToLatest: "Ir al último mensaje",
     failure: "No pude completar la orientación. Si te sientes mal, busca atención médica.",
     disclaimer: "Waylo orienta, no diagnostica ni receta. Si te sientes muy mal, ve a Urgencias.",
