@@ -16,6 +16,17 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Integración con Confianza IPS
+
+La configuración EPS existente conserva su flujo local y ofrece una conexión server-side
+con Confianza. En desarrollo, define `WAYLO_BACKEND_URL` y `WAYLO_BACKEND_KEY` en el
+entorno de Next.js; la clave nunca debe llevar el prefijo `NEXT_PUBLIC_` ni llegar al
+navegador. Las rutas BFF `/api/ips/*` mantienen la sesión Waylo y delegan al backend
+adaptador, que es el único que consulta Confianza.
+
+El alcance, los contratos, la seguridad, las responsabilidades de cada repositorio y la
+secuencia completa están documentados en [`docs/001-ips-integration-mvp-prd.md`](./docs/001-ips-integration-mvp-prd.md).
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
