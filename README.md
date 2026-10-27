@@ -45,3 +45,12 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Votos de me gusta / no me gusta en Discord
+
+Cada vez que alguien marca un mensaje de la IA como útil o no útil, `/api/feedback` envía un
+aviso a un canal de Discord. Solo viaja el voto, el id del mensaje, el idioma y si la persona
+tiene cuenta; nunca el texto de la conversación. Para activarlo, crea un webhook en el canal
+(Configuración del servidor → Integraciones → Webhooks) y define `DISCORD_FEEDBACK_WEBHOOK_URL`
+en `.env.local` y en el entorno de despliegue. Sin la variable, el botón funciona igual y no se
+envía nada. La URL del webhook es un secreto: quien la tenga puede escribir en el canal.

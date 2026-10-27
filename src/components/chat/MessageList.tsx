@@ -56,8 +56,19 @@ interface AssistantTextProps {
 function AssistantText({ message, animate, isAlert, isError, isLastError, pending, onRetry, onRegenerate }: AssistantTextProps) {
   const t = useT();
   const [done, setDone] = useState(!animate);
-  // Only kept on screen for now; nothing is stored or sent yet.
   const [feedback, setFeedback] = useState<MessageFeedback | null>(null);
+
+  // The vote shows at once. Telling the owner happens in the background and never gets in the person's way.
+  function rate(value: MessageFeedback | null) {
+    setFeedback(value);
+    if (!value) return;
+    void fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ vote: value, messageId: message.id }),
+      keepalive: true,
+    }).catch(() => {});
+  }
   const smoothScroll = useSmoothScroll();
   const showCard = Boolean(message.card) && done;
 
@@ -101,7 +112,7 @@ function AssistantText({ message, animate, isAlert, isError, isLastError, pendin
           text={message.content}
           hidden={!done}
           feedback={feedback}
-          onFeedback={setFeedback}
+          onFeedback={rate}
           onRegenerate={onRegenerate ? () => onRegenerate(message.id) : undefined}
         />
       )}
