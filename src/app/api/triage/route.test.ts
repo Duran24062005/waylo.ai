@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const jar: Record<string, string> = {};
 const runTriage = vi.fn();
 const getSession = vi.fn();
+const getIpsAppointments = vi.fn();
 const readUsage = vi.fn();
 const saveUsage = vi.fn();
 
@@ -11,6 +12,14 @@ vi.mock("next/headers", () => ({
   headers: async () => ({ get: () => null }),
 }));
 vi.mock("@/lib/session", () => ({ getSession: () => getSession() }));
+vi.mock("@/lib/ips-backend", () => ({
+  getIpsAppointments: (id: string) => getIpsAppointments(id),
+  IpsBackendError: class IpsBackendError extends Error {
+    constructor(readonly code: string, readonly status: number, message: string) {
+      super(message);
+    }
+  },
+}));
 // The counting rules are the real ones; only the reads and writes of the database are replaced.
 vi.mock("@/lib/usage", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/usage")>()),
@@ -52,6 +61,7 @@ beforeEach(() => {
   getSession.mockReset().mockResolvedValue(null);
   readUsage.mockReset().mockResolvedValue(null);
   saveUsage.mockReset().mockResolvedValue(undefined);
+  getIpsAppointments.mockReset();
   vi.stubEnv("AUTH_SECRET", "secreto-de-prueba");
   waiting = encodeGuest(5, NOW + GUEST_WAIT_MS);
 });
@@ -149,6 +159,36 @@ describe("POST /api/triage for signed-in users", () => {
 
   beforeEach(() => {
     getSession.mockResolvedValue({ id: "u1", nombre: "Gustavo", apodo: null, sid: "s1" });
+  });
+
+  it("loads appointment context from the IPS only for an appointment question", async () => {
+    getIpsAppointments.mockResolvedValue([
+      {
+        id: "a1",
+        type: null,
+        startsAt: "2026-11-02T09:00:00Z",
+        endsAt: null,
+        status: "confirmed",
+        reason: "Consulta general",
+        doctorName: null,
+        site: null,
+      },
+    ]);
+
+    await post([{ role: "user", content: "¿Qué citas tengo?" }]);
+
+    expect(getIpsAppointments).toHaveBeenCalledWith("u1");
+    expect(runTriage).toHaveBeenCalledWith(expect.objectContaining({ ipsContext: expect.stringContaining("confirmed") }));
+  });
+
+  it("keeps triage available when the IPS adapter is unavailable", async () => {
+    getIpsAppointments.mockRejectedValue(new Error("adapter down"));
+
+    const response = await post([{ role: "user", content: "¿Qué citas tengo?" }]);
+
+    expect(response.status).toBe(200);
+    expect(runTriage).toHaveBeenCalledWith(expect.objectContaining({ ipsContext: expect.stringContaining("Confianza") }));
+    expect((await response.json()).kind).toBe("question");
   });
 
   it("ignores a used-up visitor cookie, uses no visitor counter, and records the reply on the account", async () => {

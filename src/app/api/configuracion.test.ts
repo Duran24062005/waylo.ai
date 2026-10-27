@@ -6,6 +6,7 @@ const getProfile = vi.fn();
 const listSessions = vi.fn();
 const readUsage = vi.fn();
 const getEpsState = vi.fn();
+const getIpsLink = vi.fn();
 
 vi.mock("next/headers", () => ({
   cookies: async () => ({ get: (name: string) => (jar[name] ? { value: jar[name] } : undefined) }),
@@ -17,6 +18,7 @@ vi.mock("@/lib/profile-db", () => ({
   listSessions: (...args: unknown[]) => listSessions(...args),
 }));
 vi.mock("@/lib/eps-db", () => ({ getEpsState: (...args: unknown[]) => getEpsState(...args) }));
+vi.mock("@/lib/ips-backend", () => ({ getIpsLink: (...args: unknown[]) => getIpsLink(...args) }));
 vi.mock("@/lib/usage", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/usage")>()),
   readUsage: (...args: unknown[]) => readUsage(...args),
@@ -34,6 +36,7 @@ beforeEach(() => {
   listSessions.mockReset().mockResolvedValue(SESSIONS);
   readUsage.mockReset().mockResolvedValue(null);
   getEpsState.mockReset().mockResolvedValue({ eps: "confianza", cedula: "••••••3456", codigoVenceEn: null, autorizado: true, acceso: false });
+  getIpsLink.mockReset().mockResolvedValue({ status: "active", ips: { name: "Confianza IPS", slug: "confianza" }, linked_at: "2026-10-26T00:00:00.000Z", status_changed_at: "2026-10-26T00:00:00.000Z" });
 });
 
 describe("GET /api/configuracion", () => {
@@ -50,6 +53,7 @@ describe("GET /api/configuracion", () => {
       profile: PROFILE,
       sessions: SESSIONS,
       eps: { eps: "confianza", cedula: "••••••3456", autorizado: true, acceso: false },
+      ips: { status: "active", ips: { slug: "confianza" } },
       voice: "masculino",
       usage: { dayUsed: 0, dayLimit: 100, monthUsed: 0, monthLimit: 2000, blocked: null },
     });
@@ -61,7 +65,7 @@ describe("GET /api/configuracion", () => {
 
     const body = await (await GET()).json();
 
-    expect(body).toEqual({ signedIn: false, voice: "femenino", profile: null, sessions: [], usage: null, eps: null });
+    expect(body).toEqual({ signedIn: false, voice: "femenino", profile: null, sessions: [], usage: null, eps: null, ips: { status: "none", ips: null, linked_at: null, status_changed_at: null } });
     expect(getProfile).not.toHaveBeenCalled();
     expect(listSessions).not.toHaveBeenCalled();
   });
