@@ -11,7 +11,7 @@ import { useT } from "@/i18n/I18nProvider";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/lib/types";
 import { AttachmentChip } from "./AttachmentChip";
-import { MessageActions } from "./MessageActions";
+import { MessageActions, type MessageFeedback } from "./MessageActions";
 import { ThinkingLoader } from "./ThinkingLoader";
 import { TypewriterText } from "./TypewriterText";
 
@@ -56,6 +56,8 @@ interface AssistantTextProps {
 function AssistantText({ message, animate, isAlert, isError, isLastError, pending, onRetry, onRegenerate }: AssistantTextProps) {
   const t = useT();
   const [done, setDone] = useState(!animate);
+  // Only kept on screen for now; nothing is stored or sent yet.
+  const [feedback, setFeedback] = useState<MessageFeedback | null>(null);
   const smoothScroll = useSmoothScroll();
   const showCard = Boolean(message.card) && done;
 
@@ -98,6 +100,8 @@ function AssistantText({ message, animate, isAlert, isError, isLastError, pendin
         <MessageActions
           text={message.content}
           hidden={!done}
+          feedback={feedback}
+          onFeedback={setFeedback}
           onRegenerate={onRegenerate ? () => onRegenerate(message.id) : undefined}
         />
       )}

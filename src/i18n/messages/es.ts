@@ -138,6 +138,8 @@ export const es = {
     copy: "Copiar",
     copied: "Copiado",
     retry: "Reintentar",
+    like: "Respuesta útil",
+    dislike: "Respuesta no útil",
     tryAgain: "Intentar de nuevo",
     conversationRegion: "Conversación",
     thinking: "Pensando...",

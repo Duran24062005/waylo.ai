@@ -136,6 +136,8 @@ export const en: Messages = {
     copy: "Copy",
     copied: "Copied",
     retry: "Try again",
+    like: "Helpful answer",
+    dislike: "Unhelpful answer",
     tryAgain: "Try again",
     conversationRegion: "Conversation",
     thinking: "Thinking...",

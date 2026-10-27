@@ -136,6 +136,8 @@ export const pt: Messages = {
     copy: "Copiar",
     copied: "Copiado",
     retry: "Tentar de novo",
+    like: "Resposta útil",
+    dislike: "Resposta não útil",
     tryAgain: "Tentar de novo",
     conversationRegion: "Conversa",
     thinking: "Pensando...",
