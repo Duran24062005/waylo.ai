@@ -65,8 +65,7 @@ export function EpsPanel({ eps: initial, ips: initialIps }: { eps: EpsState | nu
     const value = cedula.trim();
     if (!value) return;
     if (!CEDULA_PATTERN.test(value)) return setCedulaInvalid(true);
-    const result = await save({ cedula: value });
-    if (result.ok) setCedula("");
+    await save({ cedula: value });
   }
 
   async function changeCode(next: string) {
@@ -177,7 +176,10 @@ export function EpsPanel({ eps: initial, ips: initialIps }: { eps: EpsState | nu
             <span>{copy.cedulaSaved(eps.cedula)}</span>
             <button
               type="button"
-              onClick={() => void save({ cedula: null })}
+              onClick={() => {
+                setCedula("");
+                void save({ cedula: null });
+              }}
               className="cursor-pointer font-semibold text-text underline underline-offset-4 hover:no-underline"
             >
               {copy.remove}
