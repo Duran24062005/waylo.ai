@@ -48,7 +48,7 @@ export function ChatHeader({
     <header className="bg-surface-raised px-4 pb-4 pt-3 shadow-raised lg:hidden">
       <div className="flex items-center justify-between gap-3">
         <Link
-          href="/inicio"
+          href="/"
           className="rounded-sm font-script text-2xl text-title-gradient focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
         >
           Waylo

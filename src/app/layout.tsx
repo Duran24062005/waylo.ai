@@ -5,6 +5,7 @@ import { I18nProvider } from "@/i18n/I18nProvider";
 import { getLanguageChoice, getLocale, getMessages } from "@/i18n/server";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { THEME_INIT_SCRIPT } from "@/components/theme/theme-script";
+import { OG_LOCALES, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 // Manrope: body and chat text. Poppins: labels, buttons and headings. Pacifico: page titles.
@@ -18,10 +19,23 @@ const poppins = Poppins({
 const pacifico = Pacifico({ weight: "400", subsets: ["latin"], variable: "--font-pacifico", display: "swap" });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { t } = await getMessages();
+  const { locale, t } = await getMessages();
   return {
-    title: { default: "Waylo.ai", template: "%s | Waylo.ai" },
+    metadataBase: new URL(SITE_URL),
+    title: { default: t.meta.siteTitle, template: "%s | Waylo.ai" },
     description: t.meta.siteDescription,
+    applicationName: "Waylo",
+    // "./" is each page's own address, so every page names itself as the canonical one.
+    alternates: { canonical: "./" },
+    openGraph: {
+      type: "website",
+      siteName: "Waylo",
+      title: t.meta.siteTitle,
+      description: t.meta.siteDescription,
+      url: "./",
+      locale: OG_LOCALES[locale],
+    },
+    twitter: { card: "summary_large_image", title: t.meta.siteTitle, description: t.meta.siteDescription },
   };
 }
 
