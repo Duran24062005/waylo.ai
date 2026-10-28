@@ -5,6 +5,7 @@ import { verifyPassword } from "@/lib/password";
 import { loginSchema } from "@/lib/personas";
 import { applyAccountPreferences, type SavedPreferences } from "@/lib/preferences-server";
 import { startSession } from "@/lib/session";
+import { reportError } from "@/lib/error-report";
 
 // Same hash shape as a real one, so a missing account takes about as long as a wrong password.
 const DUMMY_HASH = "scrypt$AAAAAAAAAAAAAAAAAAAAAA==$" + "A".repeat(86) + "==";
@@ -28,7 +29,8 @@ export async function POST(request: Request) {
     await startSession(person.id);
     await applyAccountPreferences(person);
     return NextResponse.json({ ok: true, nombre: person.nombre });
-  } catch {
+  } catch (error) {
+    reportError("api/login", error);
     return NextResponse.json({ error: t.server.errors.loginFailed }, { status: 500 });
   }
 }

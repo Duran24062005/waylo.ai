@@ -19,6 +19,7 @@ import { runTriage, TriageUnavailableError, type TriageMessage } from "@/lib/tri
 import type { IpsAppointment } from "@/lib/ips";
 import type { ChatMessage } from "@/lib/types";
 import { readUsage, saveUsage, usageStatus, withReply, type UsageRow } from "@/lib/usage";
+import { reportError } from "@/lib/error-report";
 
 // grok-4.6 reasons before answering and can take more than the 10 s default on Vercel.
 export const maxDuration = 60;
@@ -93,6 +94,7 @@ export async function POST(request: Request) {
         const ipsCopy = messages[locale].server.errors;
         ipsContext = appointmentsContext(appointments, ipsCopy.ipsNoAppointments);
       } catch (error) {
+        if (!(error instanceof IpsBackendError) || error.status >= 500) reportError("api/triage ips", error);
         const ipsCopy = messages[locale].server.errors;
         ipsContext =
           error instanceof IpsBackendError && error.code === "NO_ACTIVE_LINK"
@@ -134,6 +136,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof TriageUnavailableError) {
       // A failed reply is not charged.
+      reportError("api/triage", error);
       return NextResponse.json({ error: t.server.errors.aiFailed }, { status: 502 });
     }
     throw error;

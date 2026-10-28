@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { epsPatchSchema } from "@/lib/eps";
 import { saveEps } from "@/lib/eps-db";
 import { getSession } from "@/lib/session";
+import { reportError } from "@/lib/error-report";
 
 /**
  * Saves the EPS settings: the insurer, the ID number, the temporary code and the authorization. Each can come alone.
@@ -21,7 +22,8 @@ export async function PATCH(request: Request) {
     const result = await saveEps(session.id, parsed.data, Date.now());
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: 403 });
     return NextResponse.json({ ok: true, eps: result.state });
-  } catch {
+  } catch (error) {
+    reportError("api/eps", error);
     return NextResponse.json({ error: "server" }, { status: 500 });
   }
 }

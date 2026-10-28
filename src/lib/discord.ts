@@ -15,10 +15,29 @@ const GREEN = 0x2e7d32;
 const RED = 0xc62828;
 const TIMEOUT_MS = 5000;
 
-/** Reads the webhook from the environment. Anything that is not a Discord webhook counts as not configured. */
-export function discordWebhookUrl(): string | null {
-  const url = process.env.DISCORD_FEEDBACK_WEBHOOK_URL?.trim();
+/** Reads a channel's webhook from the environment. Anything that is not a Discord webhook counts as not configured. */
+export function webhookFromEnv(name: string): string | null {
+  const url = process.env[name]?.trim();
   return url && WEBHOOK_HOST.test(url) ? url : null;
+}
+
+export function discordWebhookUrl(): string | null {
+  return webhookFromEnv("DISCORD_FEEDBACK_WEBHOOK_URL");
+}
+
+/** Posts one message to a webhook. Returns false when Discord did not accept it. Never throws. */
+export async function postToDiscord(url: string, payload: unknown): Promise<boolean> {
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 export function feedbackPayload({ vote, messageId, locale, signedIn, at }: FeedbackNotice) {
@@ -45,15 +64,5 @@ export function feedbackPayload({ vote, messageId, locale, signedIn, at }: Feedb
 export async function sendFeedbackToDiscord(notice: FeedbackNotice): Promise<boolean> {
   const url = discordWebhookUrl();
   if (!url) return false;
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(feedbackPayload(notice)),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
-    return response.ok;
-  } catch {
-    return false;
-  }
+  return postToDiscord(url, feedbackPayload(notice));
 }

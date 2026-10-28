@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getIpsLink, IpsBackendError, linkIps, unlinkIps } from "@/lib/ips-backend";
 import { getSession } from "@/lib/session";
+import { reportError } from "@/lib/error-report";
 
 const linkSchema = z.object({
   document_type: z.string().trim().min(2).max(20),
@@ -11,6 +12,8 @@ const linkSchema = z.object({
 });
 
 function errorResponse(error: unknown) {
+  // A person without a link or with a wrong code is not a failure; the backend being down is.
+  if (!(error instanceof IpsBackendError) || error.status >= 500) reportError("api/ips/link", error);
   if (error instanceof IpsBackendError) {
     return NextResponse.json({ error: error.code, message: error.message }, { status: error.status });
   }

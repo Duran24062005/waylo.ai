@@ -7,6 +7,7 @@ import { readPreferences } from "@/lib/preferences";
 import { getProfile, listSessions } from "@/lib/profile-db";
 import { getSession } from "@/lib/session";
 import { readUsage, usageStatus } from "@/lib/usage";
+import { reportError } from "@/lib/error-report";
 
 /** What the settings window shows: the device's choices, and for a signed-in account its profile, sessions and usage. */
 export async function GET() {
@@ -31,7 +32,8 @@ export async function GET() {
       { signedIn: true, ...common, profile, sessions, usage: usageStatus(row, Date.now()), eps, ips },
       { headers },
     );
-  } catch {
+  } catch (error) {
+    reportError("api/configuracion", error);
     return NextResponse.json({ error: "server" }, { status: 500, headers });
   }
 }

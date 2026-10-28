@@ -3,6 +3,7 @@ import { getSql } from "@/lib/db";
 import { googleConfig, OAUTH_STATE_COOKIE } from "@/lib/google";
 import { applyAccountPreferences, saveDevicePreferences, type SavedPreferences } from "@/lib/preferences-server";
 import { startSession } from "@/lib/session";
+import { reportError } from "@/lib/error-report";
 
 interface GoogleProfile {
   sub: string;
@@ -77,7 +78,8 @@ export async function GET(request: Request) {
     const response = NextResponse.redirect(new URL("/chat", request.url));
     response.cookies.delete(OAUTH_STATE_COOKIE);
     return response;
-  } catch {
+  } catch (error) {
+    reportError("api/auth/callback/google", error);
     return fail();
   }
 }
