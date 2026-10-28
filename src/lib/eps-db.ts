@@ -55,3 +55,8 @@ export async function saveEps(
   `;
   return { ok: true, state: epsState(row, now, decryptSecret) };
 }
+
+/** The ID number the person saved, decrypted. It only ever lives on the server; the settings window gets it masked. */
+export async function readSavedCedula(personaId: string): Promise<string | null> {
+  return decryptSecret((await readRow(personaId)).cedulaCifrada);
+}

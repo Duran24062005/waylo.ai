@@ -387,6 +387,7 @@ export const pt: Messages = {
       connectionRequirements: "Selecione a Confianza, ative a autorização e informe sua cédula e o código de ativação.",
       connectionInvalid: "A Confianza rejeitou o código ou os dados. Solicite um novo código e tente novamente.",
       connectionError: "Não foi possível atualizar a conexão com a Confianza. Tente novamente.",
+      connectionService: "O serviço da Confianza não está disponível no momento. Tente novamente em alguns minutos.",
     },
     security: {
       deleteTitle: "Excluir conta",

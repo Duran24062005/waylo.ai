@@ -392,6 +392,7 @@ export const es = {
       connectionRequirements: "Selecciona Confianza, activa la autorización y escribe tu cédula y código de activación.",
       connectionInvalid: "Confianza rechazó el código o los datos. Solicita un código nuevo e inténtalo otra vez.",
       connectionError: "No pudimos actualizar la conexión con Confianza. Intenta de nuevo.",
+      connectionService: "El servicio de Confianza no está disponible por ahora. Intenta de nuevo en unos minutos.",
     },
     security: {
       deleteTitle: "Eliminar cuenta",

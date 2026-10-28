@@ -386,6 +386,7 @@ export const en: Messages = {
       connectionRequirements: "Select Confianza, enable authorization, and enter your ID number and activation code.",
       connectionInvalid: "Confianza rejected the code or details. Request a new code and try again.",
       connectionError: "We could not update the Confianza connection. Try again.",
+      connectionService: "The Confianza service is not available right now. Try again in a few minutes.",
     },
     security: {
       deleteTitle: "Delete account",

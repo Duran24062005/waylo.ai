@@ -4,8 +4,10 @@ const getSession = vi.fn();
 const getIpsLink = vi.fn();
 const linkIps = vi.fn();
 const unlinkIps = vi.fn();
+const readSavedCedula = vi.fn();
 
 vi.mock("@/lib/session", () => ({ getSession: () => getSession() }));
+vi.mock("@/lib/eps-db", () => ({ readSavedCedula: (...args: unknown[]) => readSavedCedula(...args) }));
 vi.mock("@/lib/ips-backend", () => ({
   getIpsLink: (...args: unknown[]) => getIpsLink(...args),
   linkIps: (...args: unknown[]) => linkIps(...args),
@@ -33,6 +35,7 @@ beforeEach(() => {
   getSession.mockReset().mockResolvedValue({ id: "waylo-session-1" });
   getIpsLink.mockReset().mockResolvedValue(ACTIVE);
   linkIps.mockReset().mockResolvedValue(ACTIVE);
+  readSavedCedula.mockReset().mockResolvedValue("1098765432");
   unlinkIps.mockReset().mockResolvedValue({ status: "unlinked", ips: null, linked_at: null, status_changed_at: null });
 });
 
@@ -68,6 +71,43 @@ describe("/api/ips/link", () => {
       activation_code: "123456",
     });
     expect(await response.json()).toEqual(ACTIVE);
+  });
+
+  it("links with the ID number saved on the server when the page does not send one", async () => {
+    const response = await POST(request({ document_type: "CC", eps: "confianza", activation_code: "123456" }));
+
+    expect(response.status).toBe(200);
+    expect(readSavedCedula).toHaveBeenCalledWith("waylo-session-1");
+    expect(linkIps).toHaveBeenCalledWith("waylo-session-1", {
+      document_type: "CC",
+      document_number: "1098765432",
+      eps: "Confianza",
+      activation_code: "123456",
+    });
+  });
+
+  it("does not read the saved number when the page sends one", async () => {
+    await POST(request({ document_type: "CC", document_number: "1032456789", eps: "confianza", activation_code: "123456" }));
+
+    expect(readSavedCedula).not.toHaveBeenCalled();
+    expect(linkIps.mock.calls[0][1].document_number).toBe("1032456789");
+  });
+
+  it("asks for the ID number when none was sent and none is saved", async () => {
+    readSavedCedula.mockResolvedValue(null);
+    const response = await POST(request({ document_type: "CC", eps: "confianza", activation_code: "123456" }));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "CEDULA_REQUIRED" });
+    expect(linkIps).not.toHaveBeenCalled();
+  });
+
+  it("treats a failure reading the saved number as a missing one", async () => {
+    readSavedCedula.mockRejectedValue(new Error("db down"));
+    const response = await POST(request({ document_type: "CC", eps: "confianza", activation_code: "123456" }));
+
+    expect(response.status).toBe(400);
+    expect(linkIps).not.toHaveBeenCalled();
   });
 
   it("reads and revokes only the session-owned link", async () => {
