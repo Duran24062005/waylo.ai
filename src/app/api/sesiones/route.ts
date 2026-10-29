@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { closeOtherSessions } from "@/lib/profile-db";
 import { getSession } from "@/lib/session";
+import { reportError } from "@/lib/error-report";
 
 /** Closes every session of the account except this device's. */
 export async function DELETE() {
@@ -9,7 +10,8 @@ export async function DELETE() {
 
   try {
     return NextResponse.json({ ok: true, closed: await closeOtherSessions(session.id, session.sid) });
-  } catch {
+  } catch (error) {
+    reportError("api/sesiones", error);
     return NextResponse.json({ error: "server" }, { status: 500 });
   }
 }

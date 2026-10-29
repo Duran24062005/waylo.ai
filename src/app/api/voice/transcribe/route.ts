@@ -4,6 +4,7 @@ import { getMessages } from "@/i18n/server";
 import { gatewayConfig } from "@/lib/gateway";
 import { isLocale, LANG_COOKIE } from "@/i18n/locales";
 import { languageOf } from "@/lib/preferences";
+import { reportError } from "@/lib/error-report";
 
 export const maxDuration = 30;
 
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
 
   if (!upstream?.ok) {
     console.error("[voice] transcription request failed:", upstream?.status ?? "sin respuesta");
+    reportError("api/voice/transcribe", new Error(`gateway stt failed: ${upstream?.status ?? "no response"}`));
     return NextResponse.json({ error: t.server.errors.audioFailed }, { status: 502 });
   }
 

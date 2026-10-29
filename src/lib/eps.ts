@@ -103,3 +103,20 @@ export function epsState(row: EpsRow, now: number, decrypt: (token: string | nul
     acceso: autorizado && eps !== null && cedula !== null && codigoActivo,
   };
 }
+
+/**
+ * Whether "Connect" can be pressed: the person authorized the bot, chose Confianza, has an ID number and typed the six-digit code.
+ * The ID number counts when a valid one is typed or, with nothing typed, when one is already saved: it comes back masked,
+ * so the page cannot test it, but the server has it.
+ */
+export function canLinkIps(input: {
+  autorizado: boolean;
+  eps: string | null;
+  cedulaSaved: boolean;
+  typedCedula: string;
+  code: string;
+}): boolean {
+  const typed = input.typedCedula.trim();
+  const cedulaReady = typed ? CEDULA_PATTERN.test(typed) : input.cedulaSaved;
+  return input.autorizado && input.eps === "confianza" && cedulaReady && CODE_PATTERN.test(input.code);
+}

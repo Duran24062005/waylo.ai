@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { profileSchema } from "@/lib/profile";
 import { updateProfile } from "@/lib/profile-db";
 import { getSession } from "@/lib/session";
+import { reportError } from "@/lib/error-report";
 
 // Answers carry a code, not a sentence: the page words each one in the person's language.
 export async function PATCH(request: Request) {
@@ -16,7 +17,8 @@ export async function PATCH(request: Request) {
   try {
     await updateProfile(session.id, parsed.data);
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (error) {
+    reportError("api/perfil", error);
     return NextResponse.json({ error: "server" }, { status: 500 });
   }
 }

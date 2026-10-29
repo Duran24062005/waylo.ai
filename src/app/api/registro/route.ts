@@ -5,6 +5,7 @@ import { hashPassword } from "@/lib/password";
 import { registroSchema, toIsoBirthDate } from "@/lib/personas";
 import { saveDevicePreferences } from "@/lib/preferences-server";
 import { startSession } from "@/lib/session";
+import { reportError } from "@/lib/error-report";
 
 export async function POST(request: Request) {
   const { t } = await getMessages();
@@ -42,6 +43,7 @@ export async function POST(request: Request) {
     if ((error as { code?: string }).code === "23505") {
       return NextResponse.json({ error: errors.emailTaken, campo: "email" }, { status: 409 });
     }
+    reportError("api/registro", error);
     return NextResponse.json({ error: errors.signupFailed }, { status: 500 });
   }
 }

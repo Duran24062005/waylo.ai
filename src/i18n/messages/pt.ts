@@ -2,9 +2,10 @@ import type { Messages } from "./es";
 
 export const pt: Messages = {
   meta: {
-    siteDescription: "Orientação para saber a que nível de atendimento ir.",
+    siteTitle: "Waylo: orientação sobre a que nível de atendimento ir",
+    siteDescription:
+      "Conte à Waylo como se sente e descubra se Urgência, Consulta Prioritária ou Medicina Geral é o mais indicado. Orientação clara, sem diagnósticos nem receitas.",
     titles: {
-      home: "Início",
       login: "Entrar",
       signup: "Criar conta",
       chat: "Chat",
@@ -38,6 +39,63 @@ export const pt: Messages = {
       { title: "Orientação clara", text: "de acordo com seus sintomas" },
       { title: "Sua saúde em primeiro lugar", text: "sempre" },
     ],
+    about: {
+      stepsTitle: "Como a Waylo funciona",
+      steps: [
+        {
+          title: "Conte-nos como você se sente",
+          text: "Escreva seus sintomas com suas próprias palavras, sem termos médicos. Você também pode anexar um arquivo ou falar por voz.",
+        },
+        {
+          title: "Verificamos os sinais de alerta",
+          text: "Primeiro procuramos sinais que não podem esperar. Se aparecer algum, avisamos na hora e indicamos que você vá à Urgência.",
+        },
+        {
+          title: "Receba uma orientação clara",
+          text: "Explicamos a que nível de atendimento ir, por quê e quais documentos levar, em poucas linhas e sem termos técnicos.",
+        },
+      ],
+      levelsTitle: "Os três níveis de atendimento",
+      levels: [
+        {
+          title: "Urgência",
+          text: "Para situações que não podem esperar, como dor no peito, dificuldade grave para respirar ou perda de consciência. Vá ao pronto-socorro mais próximo ou ligue para a linha de emergência da sua cidade.",
+        },
+        {
+          title: "Consulta Prioritária",
+          text: "Para mal-estares que precisam ser vistos logo por um profissional de saúde, mesmo que não sejam uma emergência.",
+        },
+        {
+          title: "Medicina Geral",
+          text: "Para incômodos leves ou acompanhamentos que podem ser atendidos em uma consulta médica agendada.",
+        },
+      ],
+      faqTitle: "Perguntas frequentes",
+      faqs: [
+        {
+          question: "A Waylo me dá um diagnóstico?",
+          answer:
+            "Não. A Waylo não diagnostica, não receita medicamentos nem sugere remédios caseiros. Ela apenas orienta a que nível de atendimento ir.",
+        },
+        {
+          question: "A Waylo substitui um médico?",
+          answer:
+            "Não. A Waylo não substitui a consulta médica nem o atendimento de urgência. Se achar que algo é grave, vá à Urgência sem esperar.",
+        },
+        {
+          question: "Preciso de uma conta para usar?",
+          answer:
+            "Não. Você pode testar o chat sem conta, com algumas respostas gratuitas. Com uma conta registrada você tem mais respostas disponíveis.",
+        },
+        {
+          question: "O que acontece com os meus dados?",
+          answer:
+            "Usamos suas informações apenas para orientar você. A política de privacidade explica em detalhes como as tratamos.",
+        },
+      ],
+      disclaimer:
+        "A Waylo é uma ferramenta de orientação. Não é um serviço médico nem substitui a avaliação de um profissional de saúde.",
+    },
   },
 
   levels: {
@@ -396,6 +454,7 @@ export const pt: Messages = {
       connectionRequirements: "Selecione a Confianza, ative a autorização e informe sua cédula e o código de ativação.",
       connectionInvalid: "A Confianza rejeitou o código ou os dados. Solicite um novo código e tente novamente.",
       connectionError: "Não foi possível atualizar a conexão com a Confianza. Tente novamente.",
+      connectionService: "O serviço da Confianza não está disponível no momento. Tente novamente em alguns minutos.",
     },
     memory: {
       title: "Memória clínica",

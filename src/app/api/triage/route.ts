@@ -15,11 +15,12 @@ import { formatClinicalMemory, listClinicalMemory } from "@/lib/clinical-memory"
 import { displayName } from "@/lib/profile";
 import { detectRedFlag } from "@/lib/red-flags";
 import { getSession } from "@/lib/session";
-import { getIpsLink } from "@/lib/ips-backend";
+import { getIpsLink, IpsBackendError } from "@/lib/ips-backend";
 import { runTriage, TriageUnavailableError, type TriageMessage } from "@/lib/triage";
 import type { IpsLinkStatus } from "@/lib/ips";
 import type { ChatMessage } from "@/lib/types";
 import { readUsage, saveUsage, usageStatus, withReply, type UsageRow } from "@/lib/usage";
+import { reportError } from "@/lib/error-report";
 
 // grok-4.6 reasons before answering and can take more than the 10 s default on Vercel.
 export const maxDuration = 60;
@@ -80,13 +81,19 @@ export async function POST(request: Request) {
     // The fixed red-flag response must not wait on or disclose institutional data.
     if (session && !currentRedFlag) {
       const [ips, memory] = await Promise.all([
-        getIpsLink(session.id).catch(() => ({
-          status: "unavailable" as const,
-          ips: null,
-          linked_at: null,
-          status_changed_at: null,
-        })),
-        listClinicalMemory(session.id).catch(() => []),
+        getIpsLink(session.id).catch((error) => {
+          if (!(error instanceof IpsBackendError) || error.status >= 500) reportError("api/triage ips", error);
+          return {
+            status: "unavailable" as const,
+            ips: null,
+            linked_at: null,
+            status_changed_at: null,
+          };
+        }),
+        listClinicalMemory(session.id).catch((error) => {
+          reportError("api/triage clinical memory", error);
+          return [];
+        }),
       ]);
       ipsStatus = ips.status;
       externalSubject = ips.status === "active" ? session.id : undefined;
@@ -134,6 +141,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof TriageUnavailableError) {
       // A failed reply is not charged.
+      reportError("api/triage", error);
       return NextResponse.json({ error: t.server.errors.aiFailed }, { status: 502 });
     }
     throw error;

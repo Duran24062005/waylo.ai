@@ -16,6 +16,11 @@ vi.mock("next/headers", () => ({
 vi.mock("@/lib/session", () => ({ getSession: () => getSession() }));
 vi.mock("@/lib/ips-backend", () => ({
   getIpsLink: (id: string) => getIpsLink(id),
+  IpsBackendError: class IpsBackendError extends Error {
+    constructor(readonly code: string, readonly status: number, message: string) {
+      super(message);
+    }
+  },
 }));
 vi.mock("@/lib/clinical-memory", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/clinical-memory")>()),

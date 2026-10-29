@@ -6,8 +6,9 @@ import { TextField } from "@/components/auth/TextField";
 import { buttonSoft } from "@/components/ui/buttons";
 import { EPS_IDS, EPS_NAMES, type EpsId } from "@/data/eps";
 import { useI18n } from "@/i18n/I18nProvider";
-import { CEDULA_PATTERN, CODE_LENGTH, CODE_PATTERN, type EpsPatch, type EpsState } from "@/lib/eps";
+import { canLinkIps, CEDULA_PATTERN, CODE_LENGTH, type EpsPatch, type EpsState } from "@/lib/eps";
 import type { IpsLinkState } from "@/lib/ips";
+import { ipsLinkProblem } from "@/lib/ips-errors";
 import { cn } from "@/lib/utils";
 import { formatWait } from "@/lib/wait";
 import { Combobox } from "./Combobox";
@@ -37,6 +38,8 @@ export function EpsPanel({ eps: initial, ips: initialIps }: { eps: EpsState | nu
 
   if (!eps) return <SignedOut title={copy.title} />;
 
+  const typedCedula = cedula.trim();
+  const canConnect = canLinkIps({ autorizado: eps.autorizado, eps: eps.eps, cedulaSaved: Boolean(eps.cedula), typedCedula, code });
   const codeActive = eps.codigoVenceEn !== null && left !== 0;
   const access = eps.acceso && left !== 0;
   const ipsAccess = ips.status === "active";
@@ -86,22 +89,40 @@ export function EpsPanel({ eps: initial, ips: initialIps }: { eps: EpsState | nu
   }
 
   async function connect() {
-    const documentNumber = cedula.trim();
-    if (!eps || eps.eps !== "confianza" || !eps.autorizado || !CEDULA_PATTERN.test(documentNumber) || !CODE_PATTERN.test(code)) {
+    if (!canConnect) {
       setIpsError(copy.connectionRequirements);
       return;
     }
     setConnecting(true);
     setIpsError(null);
     try {
+      // A number typed a moment ago may still be on its way to being saved. It is saved first, so the server links the same one.
+      if (typedCedula) {
+        const saved = await save({ cedula: typedCedula });
+        if (!saved.ok) {
+          setIpsError(copy.connectionError);
+          return;
+        }
+        setCedula("");
+      }
+      // The ID number is not sent: the server reads the saved one, which never comes back to the page unmasked.
       const response = await fetch("/api/ips/link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ document_type: "CC", document_number: documentNumber, eps: "confianza", activation_code: code }),
+        body: JSON.stringify({ document_type: "CC", eps: "confianza", activation_code: code }),
       });
       const body = (await response.json().catch(() => null)) as IpsLinkState | { error?: string } | null;
       if (!response.ok || !body || !("status" in body)) {
-        setIpsError(body && "error" in body && body.error === "LINK_INVALID" ? copy.connectionInvalid : copy.connectionError);
+        const problem = ipsLinkProblem(body && "error" in body ? body.error : undefined);
+        setIpsError(
+          problem === "invalid"
+            ? copy.connectionInvalid
+            : problem === "requirements"
+              ? copy.connectionRequirements
+              : problem === "service"
+                ? copy.connectionService
+                : copy.connectionError,
+        );
         return;
       }
       setIps(body);
@@ -238,7 +259,7 @@ export function EpsPanel({ eps: initial, ips: initialIps }: { eps: EpsState | nu
           <button
             type="button"
             onClick={() => void connect()}
-            disabled={connecting || !eps.autorizado || eps.eps !== "confianza" || !CEDULA_PATTERN.test(cedula.trim()) || !CODE_PATTERN.test(code)}
+            disabled={connecting || !canConnect}
             className={cn(buttonSoft, "min-h-10 px-4 text-sm")}
           >
             {connecting ? copy.connecting : copy.connect}

@@ -4,6 +4,7 @@ import { getMessages } from "@/i18n/server";
 import { isLocale, SPEECH_LANGUAGE } from "@/i18n/locales";
 import { gatewayConfig } from "@/lib/gateway";
 import { DEFAULT_VOICE, isVoice, VOICE_COOKIE, voiceIdFor } from "@/lib/preferences";
+import { reportError } from "@/lib/error-report";
 
 export const maxDuration = 30;
 
@@ -38,6 +39,7 @@ export async function POST(request: Request) {
 
   if (!upstream?.ok || !upstream.body) {
     console.error("[voice] speech request failed:", upstream?.status ?? "sin respuesta");
+    reportError("api/voice/speak", new Error(`gateway tts failed: ${upstream?.status ?? "no response"}`));
     return NextResponse.json({ error: t.server.errors.voiceFailed }, { status: 502 });
   }
 

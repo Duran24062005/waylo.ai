@@ -5,6 +5,7 @@ import { VOICES } from "@/lib/preferences";
 import { setPreferenceCookies } from "@/lib/preferences-server";
 import { getSession } from "@/lib/session";
 import { LANGUAGE_CHOICES } from "@/i18n/locales";
+import { reportError } from "@/lib/error-report";
 
 const schema = z
   .object({
@@ -31,7 +32,8 @@ export async function PATCH(request: Request) {
       const { idioma, voz } = parsed.data;
       if (idioma) await sql`update personas set idioma = ${idioma} where id = ${session.id}`;
       if (voz) await sql`update personas set voz = ${voz} where id = ${session.id}`;
-    } catch {
+    } catch (error) {
+      reportError("api/preferencias", error);
       // The choice already applies on this device; saving it on the account is retried on the next change.
       return NextResponse.json({ ok: true, saved: false });
     }
