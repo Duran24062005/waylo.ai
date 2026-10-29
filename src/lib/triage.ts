@@ -1,16 +1,17 @@
-import { generateText, type ModelMessage } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
+import type { ModelMessage } from "ai";
 import { z } from "zod";
 import type { Locale } from "@/i18n/locales";
 import { messages } from "@/i18n/messages";
 import { documentBlock, MAX_HISTORY_DOCUMENT_CHARS, type ModelAttachment } from "@/lib/attachments";
+import { ChatBackendError, completeWithWayloBackend, type PendingAppointment } from "@/lib/chat-backend";
+import type { ClinicalMemoryProposal } from "@/lib/clinical-memory";
 import { ORIENTATION_MARK } from "@/lib/orientation-note";
 import { detectRedFlag, redFlagMessage } from "@/lib/red-flags";
 import { findProviders } from "@/lib/providers";
 import { SYSTEM_PROMPT } from "@/lib/system-prompt";
+import type { IpsLinkStatus } from "@/lib/ips";
 import type { CareLevel, ChatMessage, OrientationCard, TriageResponse } from "@/lib/types";
 
-const DEFAULT_BASE_URL = "https://api.reto.pltk.mx/v1";
 // Non-reasoning: answers in about 1-2 s. grok-4.6 reasons first and takes 12-18 s per turn.
 const DEFAULT_MODEL = "grok-4.20-0309-non-reasoning";
 
@@ -25,6 +26,13 @@ const llmSchema = z.object({
   nivel: z.enum(["urgencias", "prioritaria", "general"]).optional(),
   justificacion: z.string().optional(),
   queLlevar: z.array(z.string()).optional(),
+  memoria: z
+    .object({
+      categoria: z.enum(["condition", "allergy", "medication", "surgery", "pregnancy", "other"]),
+      valor: z.string().trim().min(1).max(500),
+      detalles: z.record(z.string(), z.unknown()).default({}),
+    })
+    .optional(),
 });
 
 /** A message as the AI gets it: what was said, and the checked files that came with it. */
@@ -39,8 +47,16 @@ export interface TriageInput {
   /** What the patient likes to be called, when they have said so in their settings. */
   name?: string;
   eps?: string;
-  /** Contexto server-side de la IPS, solo cuando la consulta del paciente pide citas. */
-  ipsContext?: string;
+  /** Sujeto institucional server-side. Solo se envía cuando la conexión IPS está activa. */
+  externalSubject?: string;
+  /** Token efímero de confirmación para una operación de cita pendiente. */
+  pendingAppointmentToken?: string;
+  /** Estado de la conexión IPS, para que el agente no prometa herramientas que no están disponibles. */
+  ipsStatus?: IpsLinkStatus;
+  /** Hechos clínicos confirmados por el paciente, nunca el historial completo de conversaciones. */
+  clinicalMemory?: string;
+  /** Only signed-in patients can explicitly save a memory proposal. */
+  canPersistMemory?: boolean;
   /** Set when the patient pressed "Reintentar": the reply they were not happy with, so the new one is different. */
   avoid?: string;
 }
@@ -190,11 +206,27 @@ function buildSystem(input: TriageInput, priorAlarm: boolean, locale: Locale): s
   ];
   const name = safeName(input.name);
   if (name) notes.push(`El paciente prefiere que lo llames «${name}». Úsalo con naturalidad, sin repetirlo en cada mensaje.`);
-  if (input.ipsContext) {
+  if (input.externalSubject && input.ipsStatus === "active") {
     notes.push(
-      `Datos actuales de Confianza consultados por el servidor. Úsalos solo para responder sobre citas; no inventes ni modifiques datos:\n${input.ipsContext}`,
+      "Confianza está conectada para este paciente. Puedes usar las herramientas IPS disponibles para consultar sus datos propios, catálogo, sedes, médicos, disponibilidad, citas, historia clínica institucional y constancias. No digas que careces de herramientas para apartar citas. Usa solo los resultados de las herramientas; no inventes datos. Las operaciones de crear, cancelar o reprogramar requieren confirmación explícita.",
+    );
+  } else if (input.ipsStatus && input.ipsStatus !== "active") {
+    notes.push(
+      `No hay una conexión IPS activa en este momento (estado: ${input.ipsStatus}). No intentes usar herramientas IPS ni prometas consultar o apartar citas. Explica que la persona puede vincular o revisar su conexión desde Configuración.`,
+    );
+  } else {
+    notes.push("No hay una conexión IPS disponible para esta conversación. No inventes herramientas ni datos institucionales.");
+  }
+  if (input.clinicalMemory) {
+    notes.push(
+      `Memoria clínica confirmada por el paciente. Úsala solo como contexto de orientación y no la presentes como diagnóstico:\n${input.clinicalMemory}`,
     );
   }
+  notes.push(
+    input.canPersistMemory
+      ? "Memoria clínica: solo propone guardar un dato cuando el paciente lo pide explícitamente con intención de recordarlo. Nunca infieras ni guardes datos por tu cuenta; si propones uno, devuelve el objeto memoria y pide confirmación clara."
+      : "Esta conversación no tiene una cuenta autenticada. No propongas guardar memoria clínica persistente ni devuelvas el objeto memoria.",
+  );
 
   if (priorAlarm && !oriented) {
     notes.push(
@@ -223,32 +255,26 @@ export async function runTriage(input: TriageInput): Promise<TriageResponse> {
   }
   const priorAlarm = input.messages.some((message) => message.role === "user" && detectRedFlag(message.content).matched);
 
-  const apiKey = process.env.RETO_KEY;
-  if (!apiKey) {
-    console.error("[triage] RETO_KEY is not set");
-    throw new TriageUnavailableError("RETO_KEY is not set");
-  }
-
-  // The reto gateway speaks the OpenAI protocol, so the OpenAI provider talks to it directly.
-  const reto = createOpenAI({ apiKey, baseURL: process.env.RETO_BASE_URL || DEFAULT_BASE_URL });
-
   let text: string;
+  let pendingAppointment: PendingAppointment | undefined;
   try {
-    const result = await generateText({
-      model: reto.chat(process.env.RETO_MODEL || DEFAULT_MODEL),
+    const result = await completeWithWayloBackend({
+      model: process.env.RETO_MODEL || DEFAULT_MODEL,
       temperature: input.avoid?.trim() ? RETRY_TEMPERATURE : TEMPERATURE,
       system: buildSystem(input, priorAlarm, locale),
       // Real roles, so each patient reply is read as the answer to the assistant's previous message.
       messages: toModelMessages(input.messages),
+      externalSubject: input.ipsStatus === "active" ? input.externalSubject : undefined,
+      pendingAppointmentToken: input.ipsStatus === "active" ? input.pendingAppointmentToken : undefined,
     });
     text = result.text;
+    pendingAppointment = result.pendingAppointment;
   } catch (error) {
-    const { statusCode, responseBody } = (error ?? {}) as { statusCode?: number; responseBody?: string };
-    console.error(
-      "[triage] model request failed:",
-      statusCode ?? "sin estado",
-      responseBody ?? (error instanceof Error ? error.message : error),
-    );
+    if (error instanceof ChatBackendError) {
+      console.error("[triage] chat backend failed:", error.code, error.status, error.message);
+    } else {
+      console.error("[triage] chat backend failed:", error instanceof Error ? error.message : error);
+    }
     throw new TriageUnavailableError("model request failed");
   }
 
@@ -258,12 +284,15 @@ export async function runTriage(input: TriageInput): Promise<TriageResponse> {
     console.error("[triage] model reply was not valid JSON:", plain.slice(0, 120));
     // A plain-text reply is still the model's own message, so it is kept as is.
     if (plain && !plain.includes("{") && plain.length <= MAX_PLAIN_REPLY) {
-      return { kind: "question", message: plain };
+      return { kind: "question", message: plain, ...(pendingAppointment ? { pendingAppointment } : {}) };
     }
     throw new TriageUnavailableError("model reply was not usable");
   }
 
   const message = parsed.mensaje?.trim();
+  const memoryProposal: ClinicalMemoryProposal | undefined = input.canPersistMemory && parsed.memoria
+    ? { category: parsed.memoria.categoria, value: parsed.memoria.valor, details: parsed.memoria.detalles }
+    : undefined;
 
   if (parsed.listo) {
     const level = parsed.nivel ?? "prioritaria";
@@ -277,10 +306,17 @@ export async function runTriage(input: TriageInput): Promise<TriageResponse> {
         locale,
         input.eps,
       ),
+      ...(pendingAppointment ? { pendingAppointment } : {}),
+      ...(memoryProposal ? { memoryProposal } : {}),
     };
   }
 
   if (!message) throw new TriageUnavailableError("model reply had no message");
 
-  return { kind: "question", message };
+  return {
+    kind: "question",
+    message,
+    ...(pendingAppointment ? { pendingAppointment } : {}),
+    ...(memoryProposal ? { memoryProposal } : {}),
+  };
 }

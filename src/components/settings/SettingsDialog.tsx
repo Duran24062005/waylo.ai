@@ -28,6 +28,7 @@ import { AppearancePanel } from "./AppearancePanel";
 import { GeneralPanel } from "./GeneralPanel";
 import { EpsPanel } from "./EpsPanel";
 import { LivePanel } from "./LivePanel";
+import { MemoryPanel } from "./MemoryPanel";
 import { SecurityPanel } from "./SecurityPanel";
 import { UsagePanel } from "./UsagePanel";
 import { GROUPS, SECTIONS, type SectionId } from "./sections";
@@ -38,6 +39,7 @@ const ICONS: Record<SectionId, IconSvgElement> = {
   live: Mic01Icon,
   account: UserCircleIcon,
   eps: Hospital01Icon,
+  memory: Shield01Icon,
   security: Shield01Icon,
   usage: Analytics01Icon,
 };
@@ -270,6 +272,9 @@ export function SettingsDialog({ section, onSection, onClose }: SettingsDialogPr
                 </div>
                 <div role="tabpanel" id="settings-panel-eps" aria-labelledby="settings-tab-eps" hidden={section !== "eps"} className="flex flex-col gap-8">
                   <EpsPanel eps={data.eps} ips={data.ips} />
+                </div>
+                <div role="tabpanel" id="settings-panel-memory" aria-labelledby="settings-tab-memory" hidden={section !== "memory"} className="flex flex-col gap-8">
+                  <MemoryPanel signedIn={Boolean(data.profile)} />
                 </div>
                 <div role="tabpanel" id="settings-panel-security" aria-labelledby="settings-tab-security" hidden={section !== "security"} className="flex flex-col gap-8">
                   <SecurityPanel profile={data.profile} sessions={data.sessions} />

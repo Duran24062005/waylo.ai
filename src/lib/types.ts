@@ -1,3 +1,6 @@
+import type { ClinicalMemoryProposal } from "@/lib/clinical-memory";
+import type { PendingAppointment } from "@/lib/chat-backend";
+
 export type CareLevel = "urgencias" | "prioritaria" | "general";
 
 export type AttentionType = "Urgencias 24h" | "Prioritaria" | "Externa";
@@ -39,6 +42,8 @@ export interface ChatMessage {
   attachments?: Attachment[];
   /** Orientation attached to this reply, shown right under its text. */
   card?: OrientationCard;
+  /** A fact the patient explicitly asked Waylo to remember, awaiting confirmation in the UI. */
+  memoryProposal?: ClinicalMemoryProposal;
 }
 
 export interface OrientationCard {
@@ -75,6 +80,10 @@ export interface TriageResponse {
   guest?: GuestUsage;
   /** Only present for signed-in accounts. */
   usage?: AccountUsage;
+  /** A write operation that needs explicit confirmation in a later patient turn. */
+  pendingAppointment?: PendingAppointment;
+  /** A memory proposal that must be explicitly accepted by the patient. */
+  memoryProposal?: ClinicalMemoryProposal;
 }
 
 /** A saved chat, kept in the browser. */

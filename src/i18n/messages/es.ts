@@ -147,6 +147,15 @@ export const es = {
     failure: "No pude completar la orientación. Si te sientes mal, busca atención médica.",
     disclaimer: "Waylo orienta, no diagnostica ni receta. Si te sientes muy mal, ve a Urgencias.",
     openSettings: "Configuración",
+    memory: {
+      title: "¿Quieres que lo recuerde?",
+      hint: "Solo se guardará si tú lo confirmas. Puedes revisarlo o borrarlo en Configuración.",
+      save: "Guardar en mi memoria",
+      saving: "Guardando…",
+      saved: "Guardado en tu memoria.",
+      dismiss: "No guardar",
+      error: "No pudimos guardar este dato. Intenta de nuevo.",
+    },
   },
 
   status: {
@@ -293,7 +302,7 @@ export const es = {
   settings: {
     title: "Configuración",
     backToChat: "Volver al chat",
-    nav: { general: "General", appearance: "Apariencia", account: "Perfil", eps: "EPS", security: "Seguridad", live: "Waylo Live", usage: "Uso" },
+    nav: { general: "General", appearance: "Apariencia", account: "Perfil", eps: "EPS", memory: "Memoria", security: "Seguridad", live: "Waylo Live", usage: "Uso" },
     close: "Cerrar",
     loading: "Cargando…",
     loadFailed: "No pudimos cargar tu configuración. Intenta de nuevo.",
@@ -392,6 +401,21 @@ export const es = {
       connectionRequirements: "Selecciona Confianza, activa la autorización y escribe tu cédula y código de activación.",
       connectionInvalid: "Confianza rechazó el código o los datos. Solicita un código nuevo e inténtalo otra vez.",
       connectionError: "No pudimos actualizar la conexión con Confianza. Intenta de nuevo.",
+    },
+    memory: {
+      title: "Memoria clínica",
+      hint: "Waylo solo guarda datos que confirmaste explícitamente. Puedes editarlos, marcarlos como resueltos o eliminarlos.",
+      empty: "Todavía no has guardado datos en tu memoria clínica.",
+      categoryLabel: "Categoría",
+      valueLabel: "Dato",
+      statusLabel: "Estado",
+      active: "Activo",
+      resolved: "Resuelto",
+      delete: "Eliminar",
+      confirmDelete: "¿Eliminar este dato de tu memoria clínica?",
+      error: "No pudimos cargar o guardar tu memoria. Intenta de nuevo.",
+      categories: { condition: "Condición", allergy: "Alergia", medication: "Medicamento", surgery: "Cirugía", pregnancy: "Embarazo", other: "Otro" },
+      save: "Guardar",
     },
     security: {
       deleteTitle: "Eliminar cuenta",

@@ -145,6 +145,15 @@ export const pt: Messages = {
     failure: "Não consegui concluir a orientação. Se você se sente mal, procure atendimento médico.",
     disclaimer: "A Waylo orienta, não diagnostica nem receita. Se você se sente muito mal, vá a uma Urgência.",
     openSettings: "Configurações",
+    memory: {
+      title: "Quer que eu me lembre disso?",
+      hint: "Só será salvo se você confirmar. Você pode revisar ou excluir em Configurações.",
+      save: "Salvar na minha memória",
+      saving: "Salvando…",
+      saved: "Salvo na sua memória.",
+      dismiss: "Não salvar",
+      error: "Não foi possível salvar este dado. Tente novamente.",
+    },
   },
 
   status: {
@@ -288,7 +297,7 @@ export const pt: Messages = {
   settings: {
     title: "Configurações",
     backToChat: "Voltar ao chat",
-    nav: { general: "Geral", appearance: "Aparência", account: "Perfil", eps: "Plano de saúde", security: "Segurança", live: "Waylo Live", usage: "Uso" },
+    nav: { general: "Geral", appearance: "Aparência", account: "Perfil", eps: "Plano de saúde", memory: "Memória", security: "Segurança", live: "Waylo Live", usage: "Uso" },
     close: "Fechar",
     loading: "Carregando…",
     loadFailed: "Não foi possível carregar suas configurações. Tente novamente.",
@@ -387,6 +396,21 @@ export const pt: Messages = {
       connectionRequirements: "Selecione a Confianza, ative a autorização e informe sua cédula e o código de ativação.",
       connectionInvalid: "A Confianza rejeitou o código ou os dados. Solicite um novo código e tente novamente.",
       connectionError: "Não foi possível atualizar a conexão com a Confianza. Tente novamente.",
+    },
+    memory: {
+      title: "Memória clínica",
+      hint: "A Waylo só salva dados que você confirmou explicitamente. Você pode editá-los, marcá-los como resolvidos ou excluí-los.",
+      empty: "Você ainda não salvou dados na sua memória clínica.",
+      categoryLabel: "Categoria",
+      valueLabel: "Dado",
+      statusLabel: "Status",
+      active: "Ativo",
+      resolved: "Resolvido",
+      delete: "Excluir",
+      confirmDelete: "Excluir este dado da sua memória clínica?",
+      error: "Não foi possível carregar ou salvar sua memória. Tente novamente.",
+      categories: { condition: "Condição", allergy: "Alergia", medication: "Medicamento", surgery: "Cirurgia", pregnancy: "Gravidez", other: "Outro" },
+      save: "Salvar",
     },
     security: {
       deleteTitle: "Excluir conta",

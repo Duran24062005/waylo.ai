@@ -145,6 +145,15 @@ export const en: Messages = {
     failure: "I could not complete the guidance. If you feel unwell, seek medical care.",
     disclaimer: "Waylo guides; it does not diagnose or prescribe. If you feel very unwell, go to Emergency Care.",
     openSettings: "Settings",
+    memory: {
+      title: "Would you like me to remember this?",
+      hint: "It is only saved if you confirm. You can review or delete it in Settings.",
+      save: "Save to my memory",
+      saving: "Saving…",
+      saved: "Saved to your memory.",
+      dismiss: "Don't save",
+      error: "We could not save this detail. Please try again.",
+    },
   },
 
   status: {
@@ -287,7 +296,7 @@ export const en: Messages = {
   settings: {
     title: "Settings",
     backToChat: "Back to chat",
-    nav: { general: "General", appearance: "Appearance", account: "Profile", eps: "Health plan", security: "Security", live: "Waylo Live", usage: "Usage" },
+    nav: { general: "General", appearance: "Appearance", account: "Profile", eps: "Health plan", memory: "Memory", security: "Security", live: "Waylo Live", usage: "Usage" },
     close: "Close",
     loading: "Loading…",
     loadFailed: "We could not load your settings. Please try again.",
@@ -386,6 +395,21 @@ export const en: Messages = {
       connectionRequirements: "Select Confianza, enable authorization, and enter your ID number and activation code.",
       connectionInvalid: "Confianza rejected the code or details. Request a new code and try again.",
       connectionError: "We could not update the Confianza connection. Try again.",
+    },
+    memory: {
+      title: "Clinical memory",
+      hint: "Waylo only saves details you explicitly confirmed. You can edit, mark them as resolved, or delete them.",
+      empty: "You have not saved any clinical details yet.",
+      categoryLabel: "Category",
+      valueLabel: "Detail",
+      statusLabel: "Status",
+      active: "Active",
+      resolved: "Resolved",
+      delete: "Delete",
+      confirmDelete: "Delete this detail from your clinical memory?",
+      error: "We could not load or save your memory. Please try again.",
+      categories: { condition: "Condition", allergy: "Allergy", medication: "Medication", surgery: "Surgery", pregnancy: "Pregnancy", other: "Other" },
+      save: "Save",
     },
     security: {
       deleteTitle: "Delete account",

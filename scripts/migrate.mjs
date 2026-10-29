@@ -76,3 +76,21 @@ await sql`alter table personas add column if not exists eps_codigo_cifrado text`
 await sql`alter table personas add column if not exists eps_codigo_expira timestamptz`;
 await sql`alter table personas add column if not exists eps_autoriza_en timestamptz`;
 console.log("Columnas de EPS listas.");
+
+// Structured clinical facts explicitly confirmed by the patient. Conversations, files and model replies stay out.
+await sql`
+  create table if not exists memoria_clinica (
+    id uuid primary key default gen_random_uuid(),
+    persona_id uuid not null references personas(id) on delete cascade,
+    categoria text not null check (categoria in ('condition', 'allergy', 'medication', 'surgery', 'pregnancy', 'other')),
+    valor text not null,
+    detalles jsonb not null default '{}'::jsonb,
+    estado text not null default 'active' check (estado in ('active', 'resolved')),
+    origen text not null check (origen = 'user_confirmed'),
+    version_consentimiento text not null,
+    creado_en timestamptz not null default now(),
+    actualizado_en timestamptz not null default now()
+  )
+`;
+await sql`create index if not exists memoria_clinica_persona_idx on memoria_clinica (persona_id, estado, actualizado_en desc)`;
+console.log("Memoria clínica estructurada lista.");
