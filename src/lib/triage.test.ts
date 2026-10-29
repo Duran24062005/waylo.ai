@@ -2,9 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const generateText = vi.fn();
 
-vi.mock("ai", () => ({ generateText: (options: unknown) => generateText(options) }));
-vi.mock("@ai-sdk/openai", () => ({
-  createOpenAI: () => ({ chat: (model: string) => ({ model }) }),
+vi.mock("@/lib/chat-backend", () => ({
+  completeWithWayloBackend: (options: unknown) => generateText(options),
+  ChatBackendError: class ChatBackendError extends Error {
+    constructor(readonly code: string, readonly status: number, message: string) {
+      super(message);
+    }
+  },
 }));
 
 import { ORIENTATION_MARK, orientationNote } from "@/lib/orientation-note";
@@ -20,7 +24,6 @@ const bot = (content: string) => ({ role: "assistant" as const, content });
 
 beforeEach(() => {
   generateText.mockReset();
-  vi.stubEnv("RETO_KEY", "test-key");
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -38,6 +41,42 @@ describe("runTriage", () => {
     const result = await runTriage({ messages: [user("Me duele la cabeza")] });
 
     expect(result).toEqual({ kind: "question", message: "Siento que te duela. ¿Desde cuándo lo tienes?" });
+  });
+
+  it("tells the backend when the IPS is active and includes confirmed context", async () => {
+    reply({ mensaje: "Voy a revisar tus citas.", listo: false });
+
+    await runTriage({
+      messages: [user("¿Qué citas tengo?")],
+      externalSubject: "persona-1",
+      ipsStatus: "active",
+      clinicalMemory: "- categoría: allergy; dato confirmado: penicilina",
+      canPersistMemory: true,
+    });
+
+    const options = generateText.mock.calls[0][0];
+    expect(options.externalSubject).toBe("persona-1");
+    expect(options.system).toContain("Confianza está conectada");
+    expect(options.system).toContain("penicilina");
+    expect(options.system).toContain("No digas que careces de herramientas");
+  });
+
+  it("returns a memory proposal and the pending appointment token without persisting either", async () => {
+    generateText.mockResolvedValueOnce({
+      text: JSON.stringify({
+        mensaje: "Puedo pedir esa cita. ¿Confirmas?",
+        listo: false,
+        memoria: { categoria: "allergy", valor: "Alergia a penicilina", detalles: {} },
+      }),
+      pendingAppointment: { token: "token-1", action: "create_appointment", summary: "Cita" },
+    });
+
+    const result = await runTriage({ messages: [user("Recuérdame que soy alérgica")], canPersistMemory: true });
+
+    expect(result).toMatchObject({
+      memoryProposal: { category: "allergy", value: "Alergia a penicilina", details: {} },
+      pendingAppointment: { token: "token-1", action: "create_appointment" },
+    });
   });
 
   it("sends the conversation with real roles, not as flattened text", async () => {
@@ -97,11 +136,11 @@ describe("runTriage", () => {
     await expect(runTriage({ messages: [user("Me duele la rodilla")] })).rejects.toBeInstanceOf(TriageUnavailableError);
   });
 
-  it("fails when the key is missing", async () => {
-    vi.stubEnv("RETO_KEY", "");
+  it("fails when the chat backend is unavailable", async () => {
+    generateText.mockRejectedValueOnce(new Error("backend down"));
 
     await expect(runTriage({ messages: [user("Me duele la rodilla")] })).rejects.toBeInstanceOf(TriageUnavailableError);
-    expect(generateText).not.toHaveBeenCalled();
+    expect(generateText).toHaveBeenCalledOnce();
   });
 
   it("fails on broken JSON and on a question without a message", async () => {

@@ -27,6 +27,20 @@ adaptador, que es el único que consulta Confianza.
 El alcance, los contratos, la seguridad, las responsabilidades de cada repositorio y la
 secuencia completa están documentados en [`docs/001-ips-integration-mvp-prd.md`](./docs/001-ips-integration-mvp-prd.md).
 
+## Chat conectado y memoria clínica
+
+El Route Handler `/api/triage` mantiene la sesión de Waylo y envía el historial al
+backend privado `/internal/chat/completion`. Cuando la conexión con Confianza está activa,
+el backend expone al agente las herramientas patient-scoped de perfil, catálogo,
+disponibilidad, citas, historia institucional y constancias. Crear, cancelar y
+reprogramar siempre requieren confirmación explícita.
+
+La memoria entre conversaciones no reutiliza transcripciones: solo se carga la memoria
+clínica estructurada que la persona confirmó, y puede editarse o eliminarse desde
+Configuración → Memoria. La tabla se crea al ejecutar `npm run db:migrate`; las variables
+`WAYLO_BACKEND_URL` y `WAYLO_BACKEND_KEY` deben existir únicamente en el entorno server-side.
+El diseño y los contratos están en [`docs/003-chat-ips-tools-memory-prd.md`](./docs/003-chat-ips-tools-memory-prd.md).
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

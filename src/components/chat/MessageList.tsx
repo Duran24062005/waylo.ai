@@ -14,6 +14,7 @@ import { AttachmentChip } from "./AttachmentChip";
 import { MessageActions, type MessageFeedback } from "./MessageActions";
 import { ThinkingLoader } from "./ThinkingLoader";
 import { TypewriterText } from "./TypewriterText";
+import { MemoryProposalCard } from "./MemoryProposalCard";
 
 const enter = {
   initial: { opacity: 0, y: 14 },
@@ -101,6 +102,7 @@ function AssistantText({ message, animate, isAlert, isError, isLastError, pendin
           <OrientationCard card={message.card} />
         </motion.div>
       )}
+      {message.memoryProposal && done ? <MemoryProposalCard proposal={message.memoryProposal} /> : null}
       {isError ? (
         isLastError && onRetry && !pending ? (
           <button type="button" onClick={onRetry} className={cn(buttonSoft, "mt-2 min-h-11 px-5 text-base")}>

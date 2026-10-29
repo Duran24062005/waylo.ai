@@ -33,6 +33,7 @@ import {
   writeConversations,
 } from "@/lib/conversations";
 import type { WireAttachment } from "@/lib/attachments";
+import type { PendingAppointment } from "@/lib/chat-backend";
 import { orientationNote } from "@/lib/orientation-note";
 import type { AccountUsage, Attachment, ChatMessage, Conversation, GuestUsage, TriageResponse } from "@/lib/types";
 
@@ -62,8 +63,9 @@ class UsageLimitError extends Error {
 
 /** What is saved of a file: its name and kind. The content (a photo, a document's text) stays in memory only. */
 function withoutContent(message: ChatMessage): ChatMessage {
-  if (!message.attachments) return message;
-  return { ...message, attachments: message.attachments.map(({ id, name, kind }) => ({ id, name, kind })) };
+  const { memoryProposal: _memoryProposal, ...withoutMemoryProposal } = message;
+  if (!message.attachments) return withoutMemoryProposal;
+  return { ...withoutMemoryProposal, attachments: message.attachments.map(({ id, name, kind }) => ({ id, name, kind })) };
 }
 
 /** The files of a message as the triage route takes them. Only the newest message sends its photos. */
@@ -103,6 +105,7 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
   const attached = useAttachments();
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<TriageResponse | null>(null);
+  const [pendingAppointment, setPendingAppointment] = useState<PendingAppointment | null>(null);
   const [alertIds, setAlertIds] = useState<string[]>([]);
   const [errorIds, setErrorIds] = useState<string[]>([]);
   const [focused, setFocused] = useState(false);
@@ -276,6 +279,7 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
     setPending(true);
     setResult(null);
     const startedAt = Date.now();
+    const pendingTokenAtStart = pendingAppointment?.token;
 
     const call = fetch("/api/triage", {
       method: "POST",
@@ -285,6 +289,7 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
         avoid,
         // Only set when the patient spoke in a language: the reply comes back in it.
         lang: language,
+        pending_appointment_token: pendingTokenAtStart,
         messages: history
           .filter((message) => message.id !== "welcome" && !errorIds.includes(message.id))
           // The model never sees the card, so it gets a note about the orientation it already gave.
@@ -319,8 +324,19 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
         setGuestResetAt(data.guest.resetAt);
       }
       if (data.usage) setUsage(data.usage);
+      if (data.pendingAppointment) setPendingAppointment(data.pendingAppointment);
+      else if (pendingTokenAtStart) setPendingAppointment(null);
       setResult(data);
-      setMessages((current) => [...current, { id: replyId, role: "assistant", content: data.message, card: data.card }]);
+      setMessages((current) => [
+        ...current,
+        {
+          id: replyId,
+          role: "assistant",
+          content: data.message,
+          card: data.card,
+          memoryProposal: data.memoryProposal,
+        },
+      ]);
       if (data.kind === "red_flag") setAlertIds((current) => [...current, replyId]);
       setSpeaking(true);
     } else if (outcome.reason instanceof UsageLimitError) {
@@ -393,6 +409,7 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
     setAlertIds((current) => current.filter((id) => id !== assistantId));
     setErrorIds((current) => current.filter((id) => id !== assistantId));
     setResult(null);
+    setPendingAppointment(null);
     // The reply being redone goes along, so the AI answers the same question in a different way.
     void request(history, messages[index].content);
   }
@@ -406,6 +423,7 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
     attached.clear();
     setPending(false);
     setResult(null);
+    setPendingAppointment(null);
     setAlertIds([]);
     setErrorIds([]);
     setSpeaking(false);
@@ -433,6 +451,7 @@ function ChatAppInner({ nombre, userId, guest, usage: initialUsage }: ChatAppPro
     attached.clear();
     setPending(false);
     setResult(null);
+    setPendingAppointment(null);
     setSpeaking(false);
     setLimitAttempted(false);
     silenceVoice();
