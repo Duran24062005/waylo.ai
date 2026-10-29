@@ -8,13 +8,15 @@ import { HomeAbout } from "@/components/home/HomeAbout";
 import { ThemeToggle } from "@/components/theme";
 import { buttonPrimary } from "@/components/ui/buttons";
 import { getMessages } from "@/i18n/server";
+import { SITE_URL } from "@/lib/site";
 import { homeStructuredData, toJsonLd } from "@/lib/structured-data";
 import { cn } from "@/lib/utils";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getMessages();
   // The home page is the site's own name, so it skips the "| Waylo.ai" suffix.
-  return { title: { absolute: t.meta.siteTitle }, alternates: { canonical: "/" } };
+  // The canonical link is written in the page itself: Next drops the trailing slash of the home address, and crawlers expect it.
+  return { title: { absolute: t.meta.siteTitle }, alternates: { canonical: null } };
 }
 
 // One column for the whole page: logo, title and text share the same left edge.
@@ -27,6 +29,7 @@ export default async function HomePage() {
 
   return (
     <div className="bg-surface text-text">
+      <link rel="canonical" href={`${SITE_URL}/`} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
