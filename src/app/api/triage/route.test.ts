@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const jar: Record<string, string> = {};
 const runTriage = vi.fn();
 const getSession = vi.fn();
-const getIpsAppointments = vi.fn();
+const getIpsLink = vi.fn();
+const listClinicalMemory = vi.fn();
+const formatClinicalMemory = vi.fn();
 const readUsage = vi.fn();
 const saveUsage = vi.fn();
 
@@ -13,12 +15,12 @@ vi.mock("next/headers", () => ({
 }));
 vi.mock("@/lib/session", () => ({ getSession: () => getSession() }));
 vi.mock("@/lib/ips-backend", () => ({
-  getIpsAppointments: (id: string) => getIpsAppointments(id),
-  IpsBackendError: class IpsBackendError extends Error {
-    constructor(readonly code: string, readonly status: number, message: string) {
-      super(message);
-    }
-  },
+  getIpsLink: (id: string) => getIpsLink(id),
+}));
+vi.mock("@/lib/clinical-memory", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/clinical-memory")>()),
+  listClinicalMemory: (id: string) => listClinicalMemory(id),
+  formatClinicalMemory: (records: unknown) => formatClinicalMemory(records),
 }));
 // The counting rules are the real ones; only the reads and writes of the database are replaced.
 vi.mock("@/lib/usage", async (importOriginal) => ({
@@ -61,7 +63,9 @@ beforeEach(() => {
   getSession.mockReset().mockResolvedValue(null);
   readUsage.mockReset().mockResolvedValue(null);
   saveUsage.mockReset().mockResolvedValue(undefined);
-  getIpsAppointments.mockReset();
+  getIpsLink.mockReset().mockResolvedValue({ status: "none", ips: null, linked_at: null, status_changed_at: null });
+  listClinicalMemory.mockReset().mockResolvedValue([]);
+  formatClinicalMemory.mockReset().mockReturnValue(undefined);
   vi.stubEnv("AUTH_SECRET", "secreto-de-prueba");
   waiting = encodeGuest(5, NOW + GUEST_WAIT_MS);
 });
@@ -161,34 +165,40 @@ describe("POST /api/triage for signed-in users", () => {
     getSession.mockResolvedValue({ id: "u1", nombre: "Gustavo", apodo: null, sid: "s1" });
   });
 
-  it("loads appointment context from the IPS only for an appointment question", async () => {
-    getIpsAppointments.mockResolvedValue([
-      {
-        id: "a1",
-        type: null,
-        startsAt: "2026-11-02T09:00:00Z",
-        endsAt: null,
-        status: "confirmed",
-        reason: "Consulta general",
-        doctorName: null,
-        site: null,
-      },
-    ]);
+  it("passes the active IPS subject and confirmed memory to triage", async () => {
+    getIpsLink.mockResolvedValue({ status: "active", ips: { name: "Confianza", slug: "confianza" }, linked_at: "now", status_changed_at: "now" });
+    formatClinicalMemory.mockReturnValue("- categoría: allergy; dato confirmado: penicilina");
 
     await post([{ role: "user", content: "¿Qué citas tengo?" }]);
 
-    expect(getIpsAppointments).toHaveBeenCalledWith("u1");
-    expect(runTriage).toHaveBeenCalledWith(expect.objectContaining({ ipsContext: expect.stringContaining("confirmed") }));
+    expect(getIpsLink).toHaveBeenCalledWith("u1");
+    expect(listClinicalMemory).toHaveBeenCalledWith("u1");
+    expect(runTriage).toHaveBeenCalledWith(expect.objectContaining({
+      externalSubject: "u1",
+      ipsStatus: "active",
+      clinicalMemory: expect.stringContaining("penicilina"),
+      canPersistMemory: true,
+    }));
   });
 
-  it("keeps triage available when the IPS adapter is unavailable", async () => {
-    getIpsAppointments.mockRejectedValue(new Error("adapter down"));
+  it("keeps triage available when the IPS link cannot be checked", async () => {
+    getIpsLink.mockRejectedValue(new Error("adapter down"));
 
     const response = await post([{ role: "user", content: "¿Qué citas tengo?" }]);
 
     expect(response.status).toBe(200);
-    expect(runTriage).toHaveBeenCalledWith(expect.objectContaining({ ipsContext: expect.stringContaining("Confianza") }));
+    expect(runTriage).toHaveBeenCalledWith(expect.objectContaining({ ipsStatus: "unavailable", externalSubject: undefined }));
     expect((await response.json()).kind).toBe("question");
+  });
+
+  it("does not query institutional data for the current fixed red flag", async () => {
+    runTriage.mockResolvedValue({ kind: "red_flag", message: "Acude a Urgencias." });
+
+    const response = await post([{ role: "user", content: "Tengo dificultades para respirar" }]);
+
+    expect(response.status).toBe(200);
+    expect(getIpsLink).not.toHaveBeenCalled();
+    expect(listClinicalMemory).not.toHaveBeenCalled();
   });
 
   it("ignores a used-up visitor cookie, uses no visitor counter, and records the reply on the account", async () => {
@@ -297,6 +307,12 @@ describe("POST /api/triage retries", () => {
     await postWith({ avoid: "Respuesta que no gustó" });
 
     expect(runTriage).toHaveBeenCalledWith(expect.objectContaining({ avoid: "Respuesta que no gustó" }));
+  });
+
+  it("passes an appointment confirmation token without persisting it", async () => {
+    await postWith({ pending_appointment_token: "token-efimero" });
+
+    expect(runTriage).toHaveBeenCalledWith(expect.objectContaining({ pendingAppointmentToken: "token-efimero" }));
   });
 
   it("ignores an avoid that is not text", async () => {

@@ -1,8 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const generateText = vi.fn();
-vi.mock("ai", () => ({ generateText: (options: unknown) => generateText(options) }));
-vi.mock("@ai-sdk/openai", () => ({ createOpenAI: () => ({ chat: (model: string) => ({ model }) }) }));
+vi.mock("@/lib/chat-backend", () => ({
+  completeWithWayloBackend: (options: unknown) => generateText(options),
+  ChatBackendError: class ChatBackendError extends Error {
+    constructor(readonly code: string, readonly status: number, message: string) {
+      super(message);
+    }
+  },
+}));
 
 import { MAX_HISTORY_DOCUMENT_CHARS, type ModelAttachment } from "@/lib/attachments";
 import { PNG_1X1 } from "@/lib/fixtures";
@@ -63,7 +69,6 @@ describe("toModelMessages", () => {
 
 describe("runTriage with files", () => {
   beforeEach(() => {
-    vi.stubEnv("RETO_KEY", "test-key");
     generateText.mockReset().mockResolvedValue({ text: JSON.stringify({ mensaje: "Veo tu examen.", listo: false }) });
   });
 
