@@ -3,6 +3,7 @@ import { getSql } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
 import { emailChangeSchema } from "@/lib/profile";
 import { getSession } from "@/lib/session";
+import { reportError } from "@/lib/error-report";
 
 /** Changing the email asks for the current password, so a session left open somewhere cannot take the account over. */
 export async function PATCH(request: Request) {
@@ -30,6 +31,7 @@ export async function PATCH(request: Request) {
     if ((error as { code?: string }).code === "23505") {
       return NextResponse.json({ error: "email_taken", campo: "email" }, { status: 409 });
     }
+    reportError("api/perfil/correo", error);
     return NextResponse.json({ error: "server" }, { status: 500 });
   }
 }

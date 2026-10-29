@@ -2,9 +2,10 @@ import type { Messages } from "./es";
 
 export const en: Messages = {
   meta: {
-    siteDescription: "Guidance on which level of care to go to.",
+    siteTitle: "Waylo: find out which level of care you should go to",
+    siteDescription:
+      "Tell Waylo how you feel and find out if Emergency Care, a Priority Consultation or General Medicine suits you. Clear guidance, no diagnoses or prescriptions.",
     titles: {
-      home: "Home",
       login: "Sign in",
       signup: "Create account",
       chat: "Chat",
@@ -38,6 +39,63 @@ export const en: Messages = {
       { title: "Clear guidance", text: "based on your symptoms" },
       { title: "Your health first", text: "always" },
     ],
+    about: {
+      stepsTitle: "How Waylo works",
+      steps: [
+        {
+          title: "Tell us how you feel",
+          text: "Write your symptoms in your own words, with no medical terms. You can also attach a file or speak by voice.",
+        },
+        {
+          title: "We check for warning signs",
+          text: "First we look for signs that cannot wait. If one appears, we tell you right away and ask you to go to Emergency Care.",
+        },
+        {
+          title: "Get clear guidance",
+          text: "We explain which level of care to go to, why, and which documents to bring, in a few lines and without jargon.",
+        },
+      ],
+      levelsTitle: "The three levels of care",
+      levels: [
+        {
+          title: "Emergency Care",
+          text: "For situations that cannot wait, such as chest pain, severe difficulty breathing or loss of consciousness. Go to the nearest emergency room or call your city's emergency line.",
+        },
+        {
+          title: "Priority Consultation",
+          text: "For discomfort that needs to be seen soon by a health professional, even if it is not an emergency.",
+        },
+        {
+          title: "General Medicine",
+          text: "For mild complaints or follow-ups that can be handled with a scheduled medical appointment.",
+        },
+      ],
+      faqTitle: "Frequently asked questions",
+      faqs: [
+        {
+          question: "Does Waylo give me a diagnosis?",
+          answer:
+            "No. Waylo does not diagnose, prescribe medication or suggest home remedies. It only guides you on which level of care to go to.",
+        },
+        {
+          question: "Does Waylo replace a doctor?",
+          answer:
+            "No. Waylo does not replace a medical consultation or emergency care. If you feel something is serious, go to Emergency Care without waiting.",
+        },
+        {
+          question: "Do I need an account to use it?",
+          answer:
+            "No. You can try the chat without an account, with a few free replies. With a registered account you get more replies.",
+        },
+        {
+          question: "What happens to my data?",
+          answer:
+            "We use your information only to guide you. The privacy policy explains in detail how we handle it.",
+        },
+      ],
+      disclaimer:
+        "Waylo is a guidance tool. It is not a medical service and does not replace an assessment by a health professional.",
+    },
   },
 
   levels: {
@@ -386,6 +444,7 @@ export const en: Messages = {
       connectionRequirements: "Select Confianza, enable authorization, and enter your ID number and activation code.",
       connectionInvalid: "Confianza rejected the code or details. Request a new code and try again.",
       connectionError: "We could not update the Confianza connection. Try again.",
+      connectionService: "The Confianza service is not available right now. Try again in a few minutes.",
     },
     security: {
       deleteTitle: "Delete account",

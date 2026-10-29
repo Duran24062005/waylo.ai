@@ -52,7 +52,7 @@ export function ChatSidebar({
     <aside className="hidden w-80 shrink-0 flex-col gap-8 bg-surface-raised p-8 shadow-raised lg:flex xl:w-96">
       <div className="flex items-center justify-between gap-3">
         <Link
-          href="/inicio"
+          href="/"
           className="rounded-sm font-script text-3xl text-title-gradient focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
         >
           Waylo

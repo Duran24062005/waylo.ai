@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { closeSession } from "@/lib/profile-db";
 import { getSession } from "@/lib/session";
+import { reportError } from "@/lib/error-report";
 
 /** Closes one of the account's other sessions. This device signs out through /api/logout. */
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -17,7 +18,8 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   try {
     const closed = await closeSession(session.id, id);
     return NextResponse.json(closed ? { ok: true } : { error: "not_found" }, { status: closed ? 200 : 404 });
-  } catch {
+  } catch (error) {
+    reportError("api/sesiones/[id]", error);
     return NextResponse.json({ error: "server" }, { status: 500 });
   }
 }

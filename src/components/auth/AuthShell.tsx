@@ -19,7 +19,7 @@ export function AuthShell({ mascotState, children }: AuthShellProps) {
     <MotionConfig reducedMotion="user">
       <div className="flex min-h-dvh flex-col bg-surface text-text lg:flex-row">
         <aside className="hidden flex-col justify-between bg-surface-raised p-12 shadow-raised lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-[38%] lg:self-start xl:w-[40%]">
-          <Link href="/inicio" className={`self-start rounded-sm font-script text-4xl text-title-gradient ${focusRing}`}>
+          <Link href="/" className={`self-start rounded-sm font-script text-4xl text-title-gradient ${focusRing}`}>
             Waylo
           </Link>
           <div className="flex flex-col items-center gap-8 text-center">
@@ -33,7 +33,7 @@ export function AuthShell({ mascotState, children }: AuthShellProps) {
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex items-center justify-between gap-4 px-4 py-4 short:py-2 sm:px-8">
-            <Link href="/inicio" className={`rounded-sm font-script text-3xl text-title-gradient lg:invisible ${focusRing}`}>
+            <Link href="/" className={`rounded-sm font-script text-3xl text-title-gradient lg:invisible ${focusRing}`}>
               Waylo
             </Link>
             <ThemeToggle />

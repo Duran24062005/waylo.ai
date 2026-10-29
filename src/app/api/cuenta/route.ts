@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSql } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
 import { endSession, getSession } from "@/lib/session";
+import { reportError } from "@/lib/error-report";
 
 const schema = z.object({
   password: z.string().max(128).optional(),
@@ -44,7 +45,8 @@ export async function DELETE(request: Request) {
     await sql`delete from personas where id = ${session.id}`;
     await endSession();
     return NextResponse.json({ ok: true, id: session.id });
-  } catch {
+  } catch (error) {
+    reportError("api/cuenta", error);
     return NextResponse.json({ error: "server" }, { status: 500 });
   }
 }

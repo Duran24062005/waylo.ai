@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getMessages } from "@/i18n/server";
 import { generateTitle } from "@/lib/title";
+import { reportError } from "@/lib/error-report";
 
 export const maxDuration = 15;
 
@@ -15,6 +16,9 @@ export async function POST(request: Request) {
   }
 
   const title = await generateTitle(text);
-  if (!title) return NextResponse.json({ error: t.server.errors.titleFailed }, { status: 502 });
+  if (!title) {
+    reportError("api/title", new Error("title generation returned nothing"));
+    return NextResponse.json({ error: t.server.errors.titleFailed }, { status: 502 });
+  }
   return NextResponse.json({ title });
 }
